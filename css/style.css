@@ -13,27 +13,40 @@ body{
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
 }
 
-/* 縦持ち・狭い画面: 上からHUD → 盤面 → ショップ（企画書のスマホ想定レイアウト） */
-#app{display:flex;flex-direction:column-reverse;height:100%}
-#side{flex:none;display:flex;flex-direction:column;background:var(--bg-deep)}
-#stage{position:relative;flex:1;min-height:0;display:flex;justify-content:center;
+/* 縦持ち: 上からHUD → 盤面 → ショップ。
+   ショップを画面下端に置くのは企画書 §5 の指定であり、片手持ちの親指の届く位置でもある。 */
+#app{display:grid;height:100%;
+  grid-template-areas:"hud" "stage" "shop";
+  /* 列を minmax(0,1fr) にしないと、横スクロールするショップの
+     max-content 幅までグリッド列が広がって画面からはみ出す */
+  grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr) auto}
+#hud{grid-area:hud}
+#stage{grid-area:stage}
+#shop{grid-area:shop}
+#stage{position:relative;min-height:0;display:flex;justify-content:center;
   background:var(--bg-deep);touch-action:none}
 canvas{display:block;background:var(--bg)}
 
-#hud{display:flex;align-items:center;gap:14px;padding:10px 14px}
+#hud{display:flex;align-items:center;gap:14px;background:var(--bg-deep);
+  padding:max(10px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 10px
+          max(14px,env(safe-area-inset-left))}
 .stat{display:flex;flex-direction:column;line-height:1}
 .stat b{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .stat span{font-size:10px;color:var(--ink-dim);margin-top:4px}
 .stat.money b{color:var(--c-circle)}
 .stat.wide b{font-size:13px;font-weight:600;color:var(--ink-dim)}
-body.no-run #side{display:none}
+body.no-run #hud,body.no-run #shop{display:none}
 .gaugewrap{flex:1;display:flex;flex-direction:column;gap:5px;min-width:90px}
 .gaugewrap span{font-size:10px;color:var(--ink-dim)}
 .gauge{height:6px;border-radius:3px;background:var(--lane);overflow:hidden}
 .gauge i{display:block;height:100%;width:0;background:var(--bad);transition:width .18s}
 
 #shop{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;
-  padding:0 14px calc(10px + env(safe-area-inset-bottom))}
+  background:var(--bg-deep);-webkit-overflow-scrolling:touch;
+  padding-top:10px;
+  padding:0 max(14px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom))
+            max(14px,env(safe-area-inset-left))}
 #shop::-webkit-scrollbar{display:none}
 .buy{position:relative;flex:none;width:104px;min-height:62px;
   display:flex;flex-direction:column;justify-content:space-between;
@@ -50,7 +63,8 @@ body.no-run #side{display:none}
 .buy:focus-visible{outline:2px solid var(--c-circle);outline-offset:2px}
 
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:18px;padding:26px;background:rgba(27,32,56,.93);text-align:center}
+  justify-content:center;gap:18px;padding:26px;background:rgba(27,32,56,.93);text-align:center;
+  touch-action:manipulation}
 .screen[hidden]{display:none}
 .screen.scroll{justify-content:flex-start;overflow-y:auto;padding:0}
 .screen.scroll .inner{display:flex;flex-direction:column;align-items:center;gap:16px;
@@ -101,17 +115,33 @@ button.big:focus-visible{outline:3px solid var(--c-circle);outline-offset:3px}
 button.big.ghost{background:transparent;color:var(--ink);
   border:1px solid var(--lane-edge);padding:11px 24px}
 
-/* 横長・PC: 盤面は縦長のまま中央、HUDとショップは右の縦カラムへ */
-@media (min-width:860px) and (orientation:landscape){
-  #app{flex-direction:row}
-  #side{width:280px;border-left:1px solid var(--lane-edge);padding-top:8px}
-  #hud{flex-wrap:wrap;gap:10px 18px;padding:12px 16px}
+/* 横長: 盤面は縦長のまま中央、HUDとショップは右の縦カラムへ。
+   横持ちのスマホでも縦積みだと盤面が潰れるので、幅ではなく向きで切り替える。 */
+@media (orientation:landscape) and (min-width:640px){
+  #app{grid-template-areas:"stage hud" "stage shop";
+    grid-template-columns:minmax(0,1fr) clamp(190px,28%,300px);
+    grid-template-rows:auto minmax(0,1fr)}
+  #hud,#shop{border-left:1px solid var(--lane-edge)}
+  #hud{flex-wrap:wrap;gap:10px 18px;
+    padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 12px 16px}
   .gaugewrap{flex-basis:100%}
-  #shop{flex-direction:column;overflow-x:hidden;overflow-y:auto;padding:6px 16px 16px}
+  #shop{flex-direction:column;overflow-x:hidden;overflow-y:auto;
+    padding:0 max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) 16px}
   .buy{width:100%;flex-direction:row;align-items:center;justify-content:space-between;
     min-height:0;padding:11px 34px 11px 12px}
   .buy .n{font-size:12.5px}
   .buy .k{top:50%;transform:translateY(-50%)}
+}
+
+/* 背の低い横持ち（横向きスマホ）では選択画面の余白と文字を詰める */
+@media (orientation:landscape) and (max-height:460px){
+  .screen{gap:12px;padding:16px}
+  .screen.scroll .inner{gap:10px;padding:16px 18px 22px}
+  .screen h1{font-size:20px}
+  .screen p{font-size:11.5px;line-height:1.7}
+  .keys{font-size:10.5px;gap:4px 12px}
+  button.stage{padding:9px 12px}
+  button.big{padding:10px 26px;font-size:14px}
 }
 
 /* 音量設定。1要素を今出ている画面の .slot へ移して使う */

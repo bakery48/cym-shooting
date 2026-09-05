@@ -36,6 +36,8 @@ Steamは有料PCゲームの店で、購入者は数時間ぶんの内容量を�
 - [x] 中断（Esc / P）― ウィンドウのゲームには必須
 - [x] Electron シェルと `electron-builder` 設定（Steam depot 向けに展開済みディレクトリ出力）
 - [x] 60fps の確認（敵40体・弾150発で 16.6ms/frame）
+- [x] スマホ対応の確認（縦持ち・横持ち、タッチでの回転と移動）
+- [x] 単一HTMLへのまとめ（`npm run build:single`）― スマホに送ってそのまま開ける
 
 ---
 

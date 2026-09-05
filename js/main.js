@@ -95,16 +95,20 @@ function handleResize() {
   for (const b of G.bullets) b.x *= ratio;
   for (const p of G.parts) p.x *= ratio;
 }
+// HUDとショップの出し入れでも盤面の高さは変わるので、
+// window の resize だけでなく要素そのものの寸法変化を見る。
+new ResizeObserver(handleResize).observe($('stage'));
 addEventListener('resize', handleResize);
 
 function begin(stage) {
+  G = null;              // 旧ランの座標を新しい寸法に引きずらせない
+  showScreen(null);      // HUDとショップを出してから測る（出す前だと盤面が画面より高くなる）
   handleResize();
   G = newGame(stage);
   G.ship.x = view.W / 2;
   G.running = true;
   publish();
   input.reset();
-  showScreen(null);
   hud.invalidate();
   shop.invalidate();
   shop.paint(true);
