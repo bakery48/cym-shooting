@@ -1,7 +1,10 @@
 :root{
   --bg:#232a45; --bg-deep:#1b2038; --lane:#2b3357; --lane-edge:#3a4372;
   --ink:#dfe4f5; --ink-dim:#8b93b8;
-  --c-circle:#ffb340; --c-tri:#45e0c8; --c-sq:#ff6b9d; --bad:#ff4d5e;
+  /* 弾種と敵種の対応そのもの。情報なので、これらをUIに流用しない（企画書 §7） */
+  --c-circle:#ffe23c; --c-tri:#2fe4f0; --c-sq:#ff53d6;
+  /* UI専用のアクセント。CMYの3色と混ざらない色相を選んでいる */
+  --ui-hi:#ffa22e; --ui-ok:#5ad39a; --bad:#ff4d5e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
@@ -34,7 +37,7 @@ canvas{display:block;background:var(--bg)}
 .stat{display:flex;flex-direction:column;line-height:1}
 .stat b{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .stat span{font-size:10px;color:var(--ink-dim);margin-top:4px}
-.stat.money b{color:var(--c-circle)}
+.stat.money b{color:var(--ui-hi)}
 .stat.wide b{font-size:13px;font-weight:600;color:var(--ink-dim)}
 body.no-run #hud,body.no-run #shop{display:none}
 .gaugewrap{flex:1;display:flex;flex-direction:column;gap:5px;min-width:90px}
@@ -53,14 +56,14 @@ body.no-run #hud,body.no-run #shop{display:none}
   font:inherit;text-align:left;cursor:pointer;background:var(--lane);color:var(--ink);
   border:1px solid var(--lane-edge);border-radius:10px;padding:8px 9px}
 .buy .n{font-size:11.5px;font-weight:600;line-height:1.35}
-.buy .c{font-size:12px;font-variant-numeric:tabular-nums;color:var(--c-circle);font-weight:650}
+.buy .c{font-size:12px;font-variant-numeric:tabular-nums;color:var(--ui-hi);font-weight:650}
 .buy .k{position:absolute;top:5px;right:7px;font-size:9px;color:var(--ink-dim);
   font-variant-numeric:tabular-nums}
 .buy:disabled{opacity:.36;cursor:default}
-.buy.owned{background:transparent;border-color:var(--c-tri);opacity:1}
-.buy.owned .c{color:var(--c-tri)}
-.buy.ready{border-color:var(--c-circle)}
-.buy:focus-visible{outline:2px solid var(--c-circle);outline-offset:2px}
+.buy.owned{background:transparent;border-color:var(--ui-ok);opacity:1}
+.buy.owned .c{color:var(--ui-ok)}
+.buy.ready{border-color:var(--ui-hi)}
+.buy:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
 
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:18px;padding:26px;background:rgba(27,32,56,.93);text-align:center;
@@ -74,7 +77,7 @@ body.no-run #hud,body.no-run #shop{display:none}
 .screen .sub{font-size:12px;color:var(--ink-dim)}
 .screen .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .new{font-style:normal;font-size:10px;font-weight:650;color:var(--bg-deep);
-  background:var(--c-circle);border-radius:4px;padding:1px 5px;margin-left:6px}
+  background:var(--ui-hi);border-radius:4px;padding:1px 5px;margin-left:6px}
 
 /* 面選択 */
 #select-list{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px}
@@ -84,16 +87,16 @@ h2.group:first-child{margin-top:0}
 button.stage{display:flex;flex-direction:column;gap:5px;width:100%;font:inherit;
   text-align:left;cursor:pointer;color:var(--ink);background:var(--lane);
   border:1px solid var(--lane-edge);border-radius:11px;padding:12px 14px}
-button.stage:hover:not(:disabled){border-color:var(--c-tri)}
+button.stage:hover:not(:disabled){border-color:var(--ui-ok)}
 button.stage:disabled{opacity:.35;cursor:default}
-button.stage.cleared{border-color:var(--c-tri)}
-button.stage:focus-visible{outline:2px solid var(--c-circle);outline-offset:2px}
+button.stage.cleared{border-color:var(--ui-ok)}
+button.stage:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
 button.stage .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%}
 button.stage .nm{font-size:14px;font-weight:650}
 button.stage .ti{font-size:11px;font-weight:600;color:var(--ink-dim);margin-left:9px}
 button.stage .meta{font-size:11px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
 button.stage .ds{font-size:11.5px;color:var(--ink-dim);line-height:1.6}
-button.stage .bs{font-size:10.5px;color:var(--c-tri);font-variant-numeric:tabular-nums}
+button.stage .bs{font-size:10.5px;color:var(--ui-ok);font-variant-numeric:tabular-nums}
 button.stage .bs:empty{display:none}
 .screen p{font-size:13px;color:var(--ink-dim);line-height:1.85;max-width:30em;
   line-break:strict;overflow-wrap:anywhere}
@@ -109,9 +112,9 @@ kbd{font:inherit;font-size:10.5px;color:var(--ink);background:var(--lane);
   font-variant-numeric:tabular-nums}
 .results dt{color:var(--ink-dim);text-align:right}
 .results dd{font-weight:600;text-align:left}
-button.big{font:inherit;font-size:15px;font-weight:600;color:var(--bg-deep);background:var(--c-tri);
+button.big{font:inherit;font-size:15px;font-weight:600;color:var(--bg-deep);background:var(--ui-ok);
   border:0;border-radius:100px;padding:12px 34px;cursor:pointer}
-button.big:focus-visible{outline:3px solid var(--c-circle);outline-offset:3px}
+button.big:focus-visible{outline:3px solid var(--ui-hi);outline-offset:3px}
 button.big.ghost{background:transparent;color:var(--ink);
   border:1px solid var(--lane-edge);padding:11px 24px}
 
@@ -149,7 +152,7 @@ button.big.ghost{background:transparent;color:var(--ink);
   font-size:11.5px;color:var(--ink-dim)}
 .slot{display:flex;justify-content:center;width:100%}
 .opt{display:flex;align-items:center;gap:7px;cursor:pointer}
-.opt input[type=checkbox]{accent-color:var(--c-tri);width:15px;height:15px;cursor:pointer}
-.opt input[type=range]{accent-color:var(--c-tri);width:120px;cursor:pointer}
+.opt input[type=checkbox]{accent-color:var(--ui-ok);width:15px;height:15px;cursor:pointer}
+.opt input[type=range]{accent-color:var(--ui-ok);width:120px;cursor:pointer}
 .opt input[type=range]:disabled{opacity:.4;cursor:default}
 .opt:focus-within{color:var(--ink)}

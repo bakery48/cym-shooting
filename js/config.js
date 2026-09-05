@@ -35,7 +35,8 @@ export const CONFIG = {
 };
 
 export const TYPES = ['circle', 'tri', 'sq'];
-export const COLOR = { circle: '#ffb340', tri: '#45e0c8', sq: '#ff6b9d' };
+// 弾種と敵種の対応そのもの。装飾ではなく情報なので、他の用途に流用しない（企画書 §7）
+export const COLOR = { circle: '#ffe23c', tri: '#2fe4f0', sq: '#ff53d6' };   // Y / C / M
 export const MARK  = { circle: '●', tri: '▲', sq: '■' };
 
 export const PALETTE = {
