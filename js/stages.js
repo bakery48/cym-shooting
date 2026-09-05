@@ -106,8 +106,6 @@ export function resolveRules(stage) {
     chaffChance: { ...CONFIG.chaffChance, ...stage.chaffChance },
     weights: stage.weights,
     shop: stage.shop,
-    // 持ち込める強化。既定ではその面で買えるものと同じにする。
-    carry: stage.carry ?? stage.shop,
     startMoney: stage.startMoney ?? 0,
     startUp: stage.startUp ?? {},
   };

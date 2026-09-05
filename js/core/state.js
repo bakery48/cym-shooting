@@ -6,27 +6,38 @@ import { sfx } from './audio.js';
 /** 弾種 → ポッド強化ID の対応。 */
 const POD_ID = { circle: 'podCircle', tri: 'podTri', sq: 'podSq' };
 
-export function newGame(stage, wallet) {
+export function newGame(stage, meta) {
   const rules = resolveRules(stage);
-
-  // 財布から持ち込めるのは、その面で買える強化だけ
-  const carried = {};
-  for (const id of rules.carry) if (wallet.up[id]) carried[id] = wallet.up[id];
 
   const G = {
     stage, rules,
+    // 恒久強化はランをまたいで残る唯一の強さ。ラン中は変化しない。
+    meta: { ...meta.up },
+    // 防壁はランごとに戻る。突破を肩代わりした回数ぶんだけ減っていく。
+    shield: meta.up.shield,
+    wings: [],
     running: false, over: false, paused: false, cleared: false,
-    t: 0, money: wallet.money + rules.startMoney, breach: 0,
+    t: 0, money: rules.startMoney, breach: 0, cores: 0,
     ship: { x: view.W / 2, y: 0, idx: 0, ang: 0, targetAng: 0, cd: 0 },
     enemies: [], bullets: [], parts: [], pods: [],
     nextSpawn: 0.6, shake: 0, flash: 0,
-    up: { podCircle: false, podTri: false, podSq: false, rate: 0, pierce: 0, spread: 0,
-          ...carried, ...rules.startUp },
+    // ラン内強化は毎回ゼロから。ここが企画書 §2 の弧を毎ラン成立させている。
+    up: { podCircle: false, podTri: false, podSq: false, rate: 0, pierce: 0, spread: 0, ...rules.startUp },
     st: { ship: 0, pod: 0, armored: 0, breach: 0, earned: 0 },
     endReason: '',
   };
   syncPods(G);   // 最初からポッドを持つモードのため
+  syncWings(G);
   return G;
+}
+
+/** 僚機は自機の脇に固定で並ぶ。ポッドと違って公転しない（別物だと見て分かるように）。 */
+export function syncWings(G) {
+  const n = G.meta.wing ?? 0;
+  G.wings = Array.from({ length: n }, (_, i) => ({
+    side: i % 2 === 0 ? -1 : 1,
+    x: 0, y: 0, cd: Math.random() * 0.4,
+  }));
 }
 
 export const fireInterval = (G) =>

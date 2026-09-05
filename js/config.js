@@ -23,6 +23,15 @@ export const CONFIG = {
   },
   pod: { orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.9, bulletSpeed: 460, range: 520 },
 
+  // 恒久強化（コア）。ラン内の弧に触れない範囲だけを受け持つ。
+  meta: {
+    coreClear: 3,        // クリアで得られるコア
+    coreFirstClear: 5,   // 初クリアの追加ぶん
+    coreFail: 1,         // 失敗しても最低限は得られる
+    wing:   { offsetX: 40, offsetY: 16, fireMul: 2.4, bulletSpeed: 460, range: 460 },
+    bullet: { radiusPerLv: 0.35 },   // 弾芯1段ごとの自機弾の半径増加率
+  },
+
   tapThreshold: 10,       // これ未満の移動なら「タップ＝砲塔回転」
 
   // 縦シューの見え方を保つため、プレイ領域は縦長に制限して中央に置く。

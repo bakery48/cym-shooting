@@ -11,12 +11,14 @@ export function update(G, dt, input, onGameOver) {
 
   updateShip(G, dt, input);
   updatePods(G, dt);
+  updateWings(G, dt);
   updateEnemies(G, dt);
   updateBullets(G, dt);
   updateParticles(G, dt);
 
   G.shake = Math.max(0, G.shake - dt * 4);
   G.flash = Math.max(0, G.flash - dt * 2.5);
+  G.shieldFlash = Math.max(0, (G.shieldFlash ?? 0) - dt * 2.5);
 }
 
 function updateShip(G, dt, input) {
@@ -62,9 +64,9 @@ function findPodTarget(G, p) {
   return nearest(G, p, p.type) ?? nearest(G, p, ANY);
 }
 
-function nearest(G, p, type) {
+function nearest(G, p, type, range = CONFIG.pod.range) {
   let best = null;
-  let bestDist = CONFIG.pod.range * view.S;
+  let bestDist = range * view.S;
   for (const e of G.enemies) {
     // 装甲敵はポッドの弾を弾くので狙わない。
     // 既にポッドより下にいる敵も、撃っても届かないので対象外にする。
@@ -73,6 +75,28 @@ function nearest(G, p, type) {
     if (d < bestDist) { bestDist = d; best = e; }
   }
   return best;
+}
+
+/**
+ * 僚機（恒久強化）。白い ◆ しか撃たない。
+ * 弾種を持つ敵に手を出させないのは、ラン内の弧に恒久強化を触れさせないため。
+ */
+function updateWings(G, dt) {
+  const sh = G.ship;
+  const { offsetX, offsetY, fireMul, range } = CONFIG.meta.wing;
+
+  for (const w of G.wings) {
+    w.x = sh.x + w.side * offsetX * view.sc;
+    w.y = sh.y + offsetY * view.sc;
+
+    w.cd -= dt;
+    if (w.cd > 0) continue;
+
+    const target = nearest(G, w, ANY, range);
+    if (!target) { w.cd = 0.1; continue; }
+    shoot(G, w.x, w.y, ANY, 'pod', Math.atan2(target.x - w.x, -(target.y - w.y)));
+    w.cd = fireInterval(G) * fireMul;
+  }
 }
 
 function updateEnemies(G, dt) {
@@ -91,12 +115,24 @@ function updateEnemies(G, dt) {
 
     if (e.y - e.r >= view.LINE) {
       G.enemies.splice(i, 1);
-      G.breach++; G.st.breach++;
-      G.shake = 1; G.flash = 1;
-      burst(G, e.x, view.LINE, PALETTE.bad, 16);
-      sfx.breach();
+      absorbOrBreach(G, e.x);
     }
   }
+}
+
+/** 防壁（恒久強化）が残っていれば突破を肩代わりする。ランごとに戻る。 */
+function absorbOrBreach(G, x) {
+  if (G.shield > 0) {
+    G.shield--;
+    G.shieldFlash = 1;
+    burst(G, x, view.LINE, PALETTE.armor, 14);
+    sfx.armorDeflect();
+    return;
+  }
+  G.breach++; G.st.breach++;
+  G.shake = 1; G.flash = 1;
+  burst(G, x, view.LINE, PALETTE.bad, 16);
+  sfx.breach();
 }
 
 function updateBullets(G, dt) {

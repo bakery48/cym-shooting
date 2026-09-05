@@ -29,6 +29,8 @@ export function spawnEnemy(G) {
 export function shoot(G, x, y, type, from, angle) {
   const n = 1 + (from === 'ship' ? G.up.spread : 0);
   const speed = (from === 'ship' ? CONFIG.ship.bulletSpeed : CONFIG.pod.bulletSpeed) * view.S;
+  // 弾芯（恒久）は自機の弾だけを太くする
+  const grow = from === 'ship' ? 1 + G.meta.core * CONFIG.meta.bullet.radiusPerLv : 1;
 
   for (let i = 0; i < n; i++) {
     const off = n === 1 ? 0 : (i - (n - 1) / 2) * 0.13;
@@ -38,7 +40,7 @@ export function shoot(G, x, y, type, from, angle) {
       vx: Math.sin(a) * speed,
       vy: -Math.cos(a) * speed,
       type, from,
-      r: 4.5 * view.sc,
+      r: 4.5 * view.sc * grow,
       pierce: from === 'ship' ? G.up.pierce : 0,
     });
   }

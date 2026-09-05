@@ -4,7 +4,7 @@
   /* 弾種と敵種の対応そのもの。情報なので、これらをUIに流用しない（企画書 §7） */
   --c-circle:#ffe23c; --c-tri:#2fe4f0; --c-sq:#ff53d6;
   /* UI専用のアクセント。CMYの3色と混ざらない色相を選んでいる */
-  --ui-hi:#ffa22e; --ui-ok:#5ad39a; --bad:#ff4d5e;
+  --ui-hi:#ffa22e; --ui-ok:#5ad39a; --armor:#e8edff; --bad:#ff4d5e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
@@ -157,15 +157,28 @@ button.big.ghost{background:transparent;color:var(--ink);
 .opt input[type=range]:disabled{opacity:.4;cursor:default}
 .opt:focus-within{color:var(--ink)}
 
-/* 持ち越し（所持金と強化はステージをまたいで残る） */
-#wallet{display:flex;align-items:center;gap:16px;flex-wrap:wrap;width:100%;
-  background:var(--lane);border:1px solid var(--lane-edge);border-radius:11px;padding:11px 14px}
-#wallet>div{display:flex;flex-direction:column;gap:4px;text-align:left;line-height:1.3}
-#wallet .w-up{flex:1;min-width:120px}
-#wallet b{font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
-#wallet .w-money b{color:var(--ui-hi);font-size:19px}
-#wallet .w-up b{font-size:11.5px;font-weight:600;color:var(--ui-ok)}
-#wallet span{font-size:9.5px;color:var(--ink-dim)}
+/* 恒久強化（コアで買う。ラン内のコイン強化とは通貨も置き場も分ける） */
+#meta{width:100%;background:var(--lane);border:1px solid var(--lane-edge);
+  border-radius:11px;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.m-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;text-align:left}
+.m-cores{display:flex;flex-direction:column;gap:3px;line-height:1.2}
+.m-cores b{font-size:21px;font-weight:650;color:var(--armor);font-variant-numeric:tabular-nums}
+.m-cores span{font-size:9.5px;color:var(--ink-dim)}
+.m-head p{flex:1;min-width:150px;font-size:10.5px;line-height:1.6;color:var(--ink-dim);
+  text-align:left;max-width:none}
+#meta-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:7px}
+button.meta{display:flex;flex-direction:column;gap:4px;font:inherit;text-align:left;cursor:pointer;
+  color:var(--ink);background:var(--bg-deep);border:1px solid var(--lane-edge);
+  border-radius:9px;padding:9px 11px}
+button.meta .row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+button.meta .nm{font-size:12px;font-weight:650}
+button.meta .c{font-size:10.5px;font-weight:650;color:var(--ui-hi);font-variant-numeric:tabular-nums}
+button.meta .ds{font-size:10px;line-height:1.55;color:var(--ink-dim);line-break:strict}
+button.meta:disabled{opacity:.4;cursor:default}
+button.meta.owned{border-color:var(--ui-ok)}
+button.meta.ready{border-color:var(--ui-hi)}
+button.meta:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
+.results dd.core{color:var(--armor)}
 #btn-reset{font:inherit;font-size:10.5px;color:var(--ink-dim);background:transparent;
   border:1px solid var(--lane-edge);border-radius:100px;padding:5px 12px;cursor:pointer}
 #btn-reset:hover{color:var(--bad);border-color:var(--bad)}

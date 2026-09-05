@@ -37,9 +37,11 @@ export function draw(G) {
   ctx.fillRect(-10, -10, W + 20, H + 20);
 
   drawDefenceLine(ctx, W, H, LINE);
+  drawShield(ctx, G, W, LINE);
   drawEnemies(ctx, G);
   drawBullets(ctx, G);
   drawPods(ctx, G);
+  drawWings(ctx, G);
   drawShip(ctx, G);
   drawParticles(ctx, G);
 
@@ -65,6 +67,51 @@ function drawDefenceLine(ctx, W, H, LINE) {
   g.addColorStop(1, 'rgba(74,84,144,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, LINE, W, H - LINE);
+}
+
+/**
+ * 防壁。恒久強化は「画面上の物が増える」形で出す（企画書 §6）。
+ * 残り数ぶんのブロックが防衛ライン上に並び、肩代わりするたびに1つ消える。
+ */
+function drawShield(ctx, G, W, LINE) {
+  const total = G.meta.shield;
+  if (!total) return;
+
+  const gap = 5 * view.sc;
+  const h = 7 * view.sc;
+  const w = (W - gap * (total + 1)) / total;
+
+  for (let i = 0; i < total; i++) {
+    const spent = i >= G.shield;
+    ctx.save();
+    if (!spent && G.shieldFlash) { ctx.shadowColor = PALETTE.armor; ctx.shadowBlur = 16 * G.shieldFlash; }
+    ctx.globalAlpha = spent ? 0.12 : 0.72;
+    ctx.fillStyle = PALETTE.armor;
+    ctx.beginPath();
+    ctx.roundRect(gap + i * (w + gap), LINE - h / 2, w, h, h / 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** 僚機。ポッドと違って公転せず自機の脇に固定で並ぶ ― 別物だと見て分かるように。 */
+function drawWings(ctx, G) {
+  for (const w of G.wings) {
+    ctx.save();
+    ctx.shadowColor = COLOR[ANY];
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = COLOR[ANY];
+    const r = 5.5 * view.sc;
+    ctx.beginPath();
+    ctx.moveTo(w.x, w.y - r * 1.5);
+    ctx.lineTo(w.x + r, w.y);
+    ctx.lineTo(w.x, w.y + r * 1.5);
+    ctx.lineTo(w.x - r, w.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 function drawEnemies(ctx, G) {
