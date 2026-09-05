@@ -8,7 +8,8 @@ import { EMPTY_META_UP, metaCost } from '../meta.js';
 const KEY = 'cym-shooting/progress/v3';
 // ラン間で残るのはコアと恒久強化だけ。コインと ラン内強化 は毎ランリセットされる。
 const EMPTY_META = { cores: 0, up: { ...EMPTY_META_UP } };
-const EMPTY = { cleared: {}, best: {}, meta: EMPTY_META, settings: { muted: false, volume: 0.7 } };
+const EMPTY = { cleared: {}, best: {}, meta: EMPTY_META,
+  settings: { muted: false, volume: 0.7, dev: false } };
 
 export function loadProgress() {
   try {

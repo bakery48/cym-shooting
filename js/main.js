@@ -10,6 +10,7 @@ import { draw } from './game/render.js';
 import { createShop } from './game/shop.js';
 import { createHud, renderResults } from './game/hud.js';
 import { createSelect } from './game/select.js';
+import { createDev } from './dev.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -48,7 +49,8 @@ function applyAudioSettings({ persist } = { persist: true }) {
   audio.setMuted(elMute.checked);
   elVol.disabled = elMute.checked;
   if (!persist) return;
-  progress.settings = { muted: audio.muted, volume: audio.volume };
+  // 設定は音量以外も入るので、丸ごと差し替えず必要な項目だけ更新する
+  Object.assign(progress.settings, { muted: audio.muted, volume: audio.volume });
   saveProgress(progress);
 }
 
@@ -63,14 +65,30 @@ const hud = createHud();
 const shop = createShop($('shop'), getGame);
 const select = createSelect(() => progress, begin, (item) => {
   const ok = buyMeta(progress, item);
-  if (ok) { sfx.buy(); publish(); }
+  if (ok) { sfx.buy(); dev.paint(); publish(); }
   return ok;
 });
+// テスト用パネル。ゲーム側からは参照しない（出荷時はこの2行を外せば消える）。
+const dev = createDev(() => progress, () => { saveProgress(progress); refreshSelect(); });
+dev.setVisible(progress.settings.dev || new URLSearchParams(location.search).has('dev'));
+
+function refreshSelect() {
+  select.paint();
+  dev.paint();
+  publish();
+}
+
 const input = createInput({
   canvas, getGame,
   onPause: togglePause,
   onShopHotkey: (i) => shop.purchase(i),
   onToggleMute: () => { elMute.checked = !elMute.checked; applyAudioSettings(); },
+  onToggleDev: () => {
+    progress.settings.dev = dev.toggle();
+    saveProgress(progress);
+    if (dev.visible) dev.paint();
+
+  },
 });
 
 /** 音量設定は1つしか無いので、今出ている画面へ差し替えて置く。 */
@@ -121,8 +139,7 @@ function begin(stage) {
 
 function openSelect() {
   G = null;
-  publish();
-  select.paint();
+  refreshSelect();
   showScreen('select');
 }
 
@@ -195,8 +212,7 @@ $('btn-reset').addEventListener('click', () => {
   progress = resetProgress();
   progress.settings = settings;      // 音量設定は進行状況ではないので残す
   saveProgress(progress);
-  publish();
-  select.paint();
+  refreshSelect();
 });
 
 handleResize();

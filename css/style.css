@@ -183,3 +183,22 @@ button.meta:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
   border:1px solid var(--lane-edge);border-radius:100px;padding:5px 12px;cursor:pointer}
 #btn-reset:hover{color:var(--bad);border-color:var(--bad)}
 #btn-reset:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
+
+/* テスト用パネル（バッククォートで開閉）。遊びの一部ではないので目立たせない */
+#dev{width:100%;background:transparent;border:1px dashed var(--lane-edge);
+  border-radius:11px;padding:10px 13px;display:flex;flex-direction:column;gap:6px}
+.dev-head{font-size:10px;color:var(--ink-dim);text-align:left;max-width:none;margin-bottom:2px}
+.dev-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dev-label{font-size:11px;color:var(--ink-dim);min-width:52px;text-align:left}
+.dev-lv{font-size:12px;font-weight:650;min-width:16px;text-align:center;
+  font-variant-numeric:tabular-nums;color:var(--ink-dim)}
+.dev-lv.on{color:var(--ui-ok)}
+.dev-max{font-size:10px;color:var(--ink-dim)}
+#dev button{font:inherit;font-size:11px;color:var(--ink);background:var(--lane);
+  border:1px solid var(--lane-edge);border-radius:7px;padding:3px 9px;cursor:pointer;min-width:30px}
+#dev button:hover{border-color:var(--ui-hi)}
+#dev button:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
+#dev input[type=number]{font:inherit;font-size:12px;width:72px;text-align:center;
+  color:var(--ink);background:var(--bg-deep);border:1px solid var(--lane-edge);
+  border-radius:7px;padding:3px 6px;font-variant-numeric:tabular-nums}
+#dev input[type=number]:focus-visible{outline:2px solid var(--ui-hi);outline-offset:1px}
