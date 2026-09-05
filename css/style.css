@@ -4,6 +4,7 @@
   --c-circle:#ffb340; --c-tri:#45e0c8; --c-sq:#ff6b9d; --bad:#ff4d5e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
 html,body{height:100%;overscroll-behavior:none}
 body{
   background:var(--bg-deep);color:var(--ink);
@@ -24,6 +25,8 @@ canvas{display:block;background:var(--bg)}
 .stat b{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .stat span{font-size:10px;color:var(--ink-dim);margin-top:4px}
 .stat.money b{color:var(--c-circle)}
+.stat.wide b{font-size:13px;font-weight:600;color:var(--ink-dim)}
+body.no-run #side{display:none}
 .gaugewrap{flex:1;display:flex;flex-direction:column;gap:5px;min-width:90px}
 .gaugewrap span{font-size:10px;color:var(--ink-dim)}
 .gauge{height:6px;border-radius:3px;background:var(--lane);overflow:hidden}
@@ -49,8 +52,38 @@ canvas{display:block;background:var(--bg)}
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:18px;padding:26px;background:rgba(27,32,56,.93);text-align:center}
 .screen[hidden]{display:none}
+.screen.scroll{justify-content:flex-start;overflow-y:auto;padding:0}
+.screen.scroll .inner{display:flex;flex-direction:column;align-items:center;gap:16px;
+  padding:26px 20px 34px;width:100%;max-width:520px;margin:0 auto}
 .screen h1{font-size:26px;font-weight:650;letter-spacing:-.02em}
-.screen p{font-size:13px;color:var(--ink-dim);line-height:1.85;max-width:30em}
+.screen h1.failed{color:var(--bad)}
+.screen .sub{font-size:12px;color:var(--ink-dim)}
+.screen .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.new{font-style:normal;font-size:10px;font-weight:650;color:var(--bg-deep);
+  background:var(--c-circle);border-radius:4px;padding:1px 5px;margin-left:6px}
+
+/* 面選択 */
+#select-list{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px}
+h2.group{font-size:10px;font-weight:600;color:var(--ink-dim);letter-spacing:.14em;
+  margin:10px 0 2px;text-align:left}
+h2.group:first-child{margin-top:0}
+button.stage{display:flex;flex-direction:column;gap:5px;width:100%;font:inherit;
+  text-align:left;cursor:pointer;color:var(--ink);background:var(--lane);
+  border:1px solid var(--lane-edge);border-radius:11px;padding:12px 14px}
+button.stage:hover:not(:disabled){border-color:var(--c-tri)}
+button.stage:disabled{opacity:.35;cursor:default}
+button.stage.cleared{border-color:var(--c-tri)}
+button.stage:focus-visible{outline:2px solid var(--c-circle);outline-offset:2px}
+button.stage .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%}
+button.stage .nm{font-size:14px;font-weight:650}
+button.stage .ti{font-size:11px;font-weight:600;color:var(--ink-dim);margin-left:9px}
+button.stage .meta{font-size:11px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+button.stage .ds{font-size:11.5px;color:var(--ink-dim);line-height:1.6}
+button.stage .bs{font-size:10.5px;color:var(--c-tri);font-variant-numeric:tabular-nums}
+button.stage .bs:empty{display:none}
+.screen p{font-size:13px;color:var(--ink-dim);line-height:1.85;max-width:30em;
+  line-break:strict;overflow-wrap:anywhere}
+button.stage .ds,.screen .sub{line-break:strict}
 .screen p b{color:var(--ink);font-weight:600}
 .keys{display:grid;grid-template-columns:auto auto;gap:7px 16px;font-size:11.5px;
   color:var(--ink-dim);align-items:center}
@@ -65,6 +98,8 @@ kbd{font:inherit;font-size:10.5px;color:var(--ink);background:var(--lane);
 button.big{font:inherit;font-size:15px;font-weight:600;color:var(--bg-deep);background:var(--c-tri);
   border:0;border-radius:100px;padding:12px 34px;cursor:pointer}
 button.big:focus-visible{outline:3px solid var(--c-circle);outline-offset:3px}
+button.big.ghost{background:transparent;color:var(--ink);
+  border:1px solid var(--lane-edge);padding:11px 24px}
 
 /* 横長・PC: 盤面は縦長のまま中央、HUDとショップは右の縦カラムへ */
 @media (min-width:860px) and (orientation:landscape){

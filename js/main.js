@@ -1,35 +1,51 @@
 import { CONFIG } from './config.js';
+import { STAGES, stageById, isUnlocked } from './stages.js';
 import { view, attachView, resizeView } from './core/view.js';
 import { newGame } from './core/state.js';
 import { createInput } from './core/input.js';
+import { loadProgress, recordRun } from './core/save.js';
 import { update } from './game/update.js';
 import { draw } from './game/render.js';
 import { createShop } from './game/shop.js';
 import { createHud, renderResults } from './game/hud.js';
+import { createSelect } from './game/select.js';
 
 const $ = (id) => document.getElementById(id);
 
 const canvas = $('cv');
-const stage = $('stage');
-attachView(canvas, stage);
+attachView(canvas, $('stage'));
 
-const startEl = $('screen-start');
-const endEl = $('screen-end');
-const pauseEl = $('screen-pause');
+const screens = {
+  select: $('screen-select'),
+  pause: $('screen-pause'),
+  end: $('screen-end'),
+};
 
 let G = null;
+let progress = loadProgress();
 const getGame = () => G;
 
 /** チューニングとテスト用の覗き窓。ゲーム側からは参照しない。 */
-const publish = () => { window.__G = G; window.__CONFIG = CONFIG; };
+const publish = () => {
+  window.__G = G;
+  window.__CONFIG = CONFIG;
+  window.__PROGRESS = progress;
+};
 
 const hud = createHud();
 const shop = createShop($('shop'), getGame);
+const select = createSelect(() => progress, begin);
 const input = createInput({
   canvas, getGame,
-  onPause: () => togglePause(),
+  onPause: togglePause,
   onShopHotkey: (i) => shop.purchase(i),
 });
+
+function showScreen(name) {
+  for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
+  // ラン中でないときはHUDとショップを出さない（古い値が残って見えるため）
+  document.body.classList.toggle('no-run', name === 'select');
+}
 
 /** リサイズしてもラン中の座標が画面外に取り残されないようにする。 */
 function handleResize() {
@@ -46,39 +62,61 @@ function handleResize() {
 }
 addEventListener('resize', handleResize);
 
-function begin() {
+function begin(stage) {
   handleResize();
-  G = newGame();
+  G = newGame(stage);
   G.ship.x = view.W / 2;
   G.running = true;
   publish();
   input.reset();
-  startEl.hidden = true;
-  endEl.hidden = true;
-  pauseEl.hidden = true;
+  showScreen(null);
   hud.invalidate();
   shop.invalidate();
   shop.paint(true);
   hud.paint(G);
 }
 
+function openSelect() {
+  G = null;
+  publish();
+  select.paint();
+  showScreen('select');
+}
+
 function togglePause() {
   if (!G || !G.running) return;
   G.paused = !G.paused;
-  pauseEl.hidden = !G.paused;
+  showScreen(G.paused ? 'pause' : null);
   input.reset();
   shop.paint(true);
 }
 
-function gameOver(reason) {
+function gameOver(reason, cleared) {
   G.running = false;
   G.over = true;
   G.paused = false;
+  G.cleared = cleared;
   G.endReason = reason;
-  pauseEl.hidden = true;
-  endEl.hidden = false;
-  renderResults(G);
+
+  const updated = recordRun(progress, G.stage.id, cleared, G.st);
+  renderResults(G, progress.best[G.stage.id], updated);
+
+  // 次に進める面があればそれを案内する
+  const next = nextStage(G.stage);
+  $('btn-next').hidden = !next;
+  if (next) $('btn-next').textContent = `${next.name}へ`;
+  $('btn-next').dataset.stage = next?.id ?? '';
+
+  showScreen('end');
   shop.paint(true);
+}
+
+function nextStage(stage) {
+  const i = STAGES.indexOf(stage);
+  for (let j = i + 1; j < STAGES.length; j++) {
+    if (isUnlocked(STAGES[j], progress.cleared)) return STAGES[j];
+  }
+  return null;
 }
 
 let last = 0;
@@ -96,15 +134,16 @@ function frame(ts) {
   if (!G.over) draw(G);
 }
 
-$('btn-start').addEventListener('click', begin);
-$('btn-again').addEventListener('click', begin);
 $('btn-resume').addEventListener('click', togglePause);
+$('btn-again').addEventListener('click', () => begin(G.stage));
+$('btn-next').addEventListener('click', (e) => {
+  const stage = stageById(e.currentTarget.dataset.stage);
+  if (stage) begin(stage);
+});
+for (const id of ['btn-select', 'btn-quit']) {
+  $(id).addEventListener('click', openSelect);
+}
 
 handleResize();
-G = newGame();
-G.ship.x = view.W / 2;
-publish();
-shop.paint(true);
-hud.paint(G);
-draw(G);
+openSelect();
 requestAnimationFrame(frame);

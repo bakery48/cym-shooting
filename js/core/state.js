@@ -1,20 +1,25 @@
 import { CONFIG, TYPES, TURN_STEP } from '../config.js';
+import { resolveRules } from '../stages.js';
 import { view } from './view.js';
 
 /** 弾種 → ポッド強化ID の対応。 */
 const POD_ID = { circle: 'podCircle', tri: 'podTri', sq: 'podSq' };
 
-export function newGame() {
-  return {
-    running: false, over: false, paused: false,
-    t: 0, money: 0, breach: 0,
+export function newGame(stage) {
+  const rules = resolveRules(stage);
+  const G = {
+    stage, rules,
+    running: false, over: false, paused: false, cleared: false,
+    t: 0, money: rules.startMoney, breach: 0,
     ship: { x: view.W / 2, y: 0, idx: 0, ang: 0, targetAng: 0, cd: 0 },
     enemies: [], bullets: [], parts: [], pods: [],
     nextSpawn: 0.6, shake: 0, flash: 0,
-    up: { podCircle: false, podTri: false, podSq: false, rate: 0, pierce: 0, spread: 0 },
+    up: { podCircle: false, podTri: false, podSq: false, rate: 0, pierce: 0, spread: 0, ...rules.startUp },
     st: { ship: 0, pod: 0, armored: 0, breach: 0, earned: 0 },
     endReason: '',
   };
+  syncPods(G);   // 最初からポッドを持つモードのため
+  return G;
 }
 
 export const fireInterval = (G) =>

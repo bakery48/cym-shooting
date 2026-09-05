@@ -6,43 +6,53 @@
 <title>回転砲塔</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="no-run">
 
 <div id="app">
   <main id="stage">
     <canvas id="cv"></canvas>
 
-    <div class="screen" id="screen-start">
-      <h1>回転砲塔</h1>
-      <p>
-        自機を左右に動かす。撃つのは自動。<br>
-        砲塔を一段回すと弾の種類が <b>●→▲→■→●</b> と変わる。<br>
-        ●▲■ はそれぞれ同じ色の弾でしか壊れない。<br>
-        白い装甲付きはポッドの弾を弾く。自機で撃つ。
-      </p>
-      <dl class="keys">
-        <dt>移動</dt><dd>マウス / ドラッグ / <kbd>A</kbd><kbd>D</kbd> <kbd>←</kbd><kbd>→</kbd></dd>
-        <dt>砲塔を回す</dt><dd>クリック / タップ / <kbd>Space</kbd> <kbd>W</kbd> <kbd>↑</kbd></dd>
-        <dt>強化を買う</dt><dd>クリック / <kbd>1</kbd>〜<kbd>6</kbd></dd>
-        <dt>中断</dt><dd><kbd>Esc</kbd> <kbd>P</kbd></dd>
-      </dl>
-      <button class="big" id="btn-start">はじめる</button>
+    <div class="screen scroll" id="screen-select">
+      <div class="inner">
+        <h1>回転砲塔</h1>
+        <p>
+          ●▲■ はそれぞれ<b>同じ色の弾でしか壊れない</b>。<br>
+          砲塔を一段回すと弾種が <b>●→▲→■→●</b> と変わる。射撃は常時オート。<br>
+          白い装甲付きはポッドの弾を弾くので、自機で撃つ。
+        </p>
+        <dl class="keys">
+          <dt>移動</dt><dd>マウス / ドラッグ / <kbd>A</kbd><kbd>D</kbd> <kbd>←</kbd><kbd>→</kbd></dd>
+          <dt>砲塔を回す</dt><dd>クリック / タップ / <kbd>Space</kbd> <kbd>W</kbd> <kbd>↑</kbd></dd>
+          <dt>強化を買う</dt><dd>クリック / <kbd>1</kbd>〜<kbd>6</kbd></dd>
+          <dt>中断</dt><dd><kbd>Esc</kbd> <kbd>P</kbd></dd>
+        </dl>
+        <div id="select-list"></div>
+      </div>
     </div>
 
     <div class="screen" id="screen-pause" hidden>
       <h1>中断中</h1>
-      <button class="big" id="btn-resume">再開</button>
+      <div class="row">
+        <button class="big" id="btn-resume">再開</button>
+        <button class="big ghost" id="btn-quit">区を選ぶ</button>
+      </div>
     </div>
 
     <div class="screen" id="screen-end" hidden>
       <h1 id="end-title">終了</h1>
+      <p class="sub" id="end-stage"></p>
       <dl class="results" id="end-results"></dl>
-      <button class="big" id="btn-again">もう一回</button>
+      <div class="row">
+        <button class="big" id="btn-next" hidden>次へ</button>
+        <button class="big ghost" id="btn-again">もう一回</button>
+        <button class="big ghost" id="btn-select">区を選ぶ</button>
+      </div>
     </div>
   </main>
 
   <aside id="side">
     <header id="hud">
+      <div class="stat wide"><b id="hud-stage">―</b><span>区</span></div>
       <div class="stat"><b id="hud-time">3:00</b><span>のこり</span></div>
       <div class="stat money"><b id="hud-money">0</b><span>所持金</span></div>
       <div class="gaugewrap">

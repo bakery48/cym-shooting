@@ -30,7 +30,6 @@ export function createShop(rootEl, getGame) {
     b.className = 'buy';
     b.type = 'button';
     b.innerHTML = '<span class="k"></span><span class="n"></span><span class="c"></span>';
-    b.querySelector('.k').textContent = i + 1;
     b.addEventListener('click', () => purchase(i));
     rootEl.appendChild(b);
     return b;
@@ -38,9 +37,12 @@ export function createShop(rootEl, getGame) {
 
   let key = '';
 
+  /** 面ごとに買える強化が違う（モードの性格はここで作る）。 */
+  const available = (G) => SHOP.filter((u) => G.rules.shop.includes(u.id));
+
   function purchase(index) {
     const G = getGame();
-    const u = SHOP[index];
+    const u = available(G)[index];
     if (!G || !G.running || G.paused || !u || isDone(u, G)) return false;
     const cost = u.cost(G);
     if (G.money < cost) return false;
@@ -53,14 +55,18 @@ export function createShop(rootEl, getGame) {
   function paint(force) {
     const G = getGame();
     if (!G) return;
-    const next = `${G.money | 0}|${JSON.stringify(G.up)}|${G.running}|${G.paused}`;
+    const next = `${G.money | 0}|${JSON.stringify(G.up)}|${G.running}|${G.paused}|${G.stage.id}`;
     if (!force && next === key) return;
     key = next;
 
-    SHOP.forEach((u, i) => {
-      const b = buttons[i];
+    const list = available(G);
+    buttons.forEach((b, i) => {
+      const u = list[i];
+      b.hidden = !u;
+      if (!u) return;
       const done = isDone(u, G);
       const cost = u.cost(G);
+      b.querySelector('.k').textContent = i + 1;
       b.querySelector('.n').textContent = u.name + (u.lv && !done ? ` Lv${u.lv(G) + 1}` : '');
       b.querySelector('.c').textContent = done ? (u.owned ? '稼働中' : 'MAX') : cost;
       b.classList.toggle('owned', done);

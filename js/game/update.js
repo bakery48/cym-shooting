@@ -5,9 +5,8 @@ import { spawnEnemy, shoot, burst } from './entities.js';
 
 export function update(G, dt, input, onGameOver) {
   G.t += dt;
-  const left = CONFIG.runSeconds - G.t;
-  if (left <= 0) return onGameOver('時間切れ');
-  if (G.breach >= CONFIG.maxBreach) return onGameOver('防衛ライン崩壊');
+  if (G.t >= G.rules.runSeconds) return onGameOver('クリア', true);
+  if (G.breach >= G.rules.maxBreach) return onGameOver('防衛ライン崩壊', false);
 
   updateShip(G, dt, input);
   updatePods(G, dt);
@@ -68,8 +67,9 @@ function findPodTarget(G, p) {
 }
 
 function updateEnemies(G, dt) {
-  const fall = (CONFIG.fall.start + CONFIG.fall.rampPerSec * G.t) * view.S;
-  const interval = Math.max(CONFIG.spawn.min, CONFIG.spawn.start - CONFIG.spawn.rampPerSec * G.t);
+  const { fall: f, spawn: sp } = G.rules;
+  const fall = (f.start + f.rampPerSec * G.t) * view.S;
+  const interval = Math.max(sp.min, sp.start - sp.rampPerSec * G.t);
 
   G.nextSpawn -= dt;
   if (G.nextSpawn <= 0) { spawnEnemy(G); G.nextSpawn = interval; }

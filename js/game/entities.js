@@ -1,9 +1,11 @@
-import { CONFIG, TYPES } from '../config.js';
+import { CONFIG } from '../config.js';
+import { pickType } from '../stages.js';
 import { view } from '../core/view.js';
 
 export function spawnEnemy(G) {
-  const armored = Math.random() < CONFIG.armoredChance.base + CONFIG.armoredChance.perSec * G.t;
-  const type = TYPES[(Math.random() * 3) | 0];
+  const chance = G.rules.armoredChance;
+  const armored = Math.random() < chance.base + chance.perSec * G.t;
+  const type = pickType(G.rules.weights);
   const r = 18 * view.sc;
   G.enemies.push({
     type,
