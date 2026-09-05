@@ -5,7 +5,11 @@
  * AudioContext はユーザー操作より前には開始できないので、
  * 最初の操作まで生成を遅らせる。音が出せない環境でも黙って続行する。
  */
-const TYPE_HZ = { circle: 523.25, tri: 659.25, sq: 783.99 };   // ド・ミ・ソ
+import { ANY } from '../config.js';
+
+// ド・ミ・ソ。白い敵は弾種を持たないので、一段上のドを軽く鳴らす。
+const TYPE_HZ = { circle: 523.25, tri: 659.25, sq: 783.99, [ANY]: 1046.5 };
+const HZ = (type) => TYPE_HZ[type] ?? TYPE_HZ.circle;
 
 let ctx = null;
 let master = null;
@@ -34,6 +38,7 @@ function ensure() {
 
 /** 減衰するトーン。 */
 function tone({ freq, to = freq, dur = 0.12, type = 'triangle', gain = 0.25, delay = 0 }) {
+  if (!Number.isFinite(freq) || !Number.isFinite(to)) return;
   if (!ensure() || voices >= MAX_VOICES) return;
   const t0 = ctx.currentTime + delay;
   const osc = ctx.createOscillator();
@@ -55,6 +60,7 @@ function tone({ freq, to = freq, dur = 0.12, type = 'triangle', gain = 0.25, del
 
 /** ノイズ。弾かれ・突破のような「当たらなかった / 壊れた」音に使う。 */
 function noise({ dur = 0.12, gain = 0.2, hz = 1200, q = 1, sweepTo = null }) {
+  if (!Number.isFinite(hz)) return;
   if (!ensure() || voices >= MAX_VOICES) return;
   const t0 = ctx.currentTime;
   const frames = Math.max(1, Math.floor(ctx.sampleRate * dur));
@@ -80,17 +86,19 @@ function noise({ dur = 0.12, gain = 0.2, hz = 1200, q = 1, sweepTo = null }) {
   src.onended = () => { voices--; };
 }
 
-export const sfx = {
+const EFFECTS = {
   /** 砲塔が一段回った。手数のフィードバックなので、必ず鳴らす。 */
   rotate(type) {
-    tone({ freq: TYPE_HZ[type], dur: 0.07, type: 'square', gain: 0.10 });
+    tone({ freq: HZ(type), dur: 0.07, type: 'square', gain: 0.10 });
   },
   kill(type) {
-    tone({ freq: TYPE_HZ[type], to: TYPE_HZ[type] * 2, dur: 0.10, gain: 0.14 });
+    // 白い敵は下位なので、同じ形の音を軽く短く鳴らす
+    const light = type === ANY;
+    tone({ freq: HZ(type), to: HZ(type) * 2, dur: light ? 0.07 : 0.10, gain: light ? 0.08 : 0.14 });
   },
   killArmored(type) {
-    tone({ freq: TYPE_HZ[type] / 2, to: TYPE_HZ[type] * 1.5, dur: 0.26, gain: 0.22 });
-    tone({ freq: TYPE_HZ[type], dur: 0.22, gain: 0.12, delay: 0.05 });
+    tone({ freq: HZ(type) / 2, to: HZ(type) * 1.5, dur: 0.26, gain: 0.22 });
+    tone({ freq: HZ(type), dur: 0.22, gain: 0.12, delay: 0.05 });
   },
   /** 種類違いで弾かれた。空振りが分かることが目的なので鈍い音にする。 */
   deflect() {
@@ -117,6 +125,16 @@ export const sfx = {
       tone({ freq: f, dur: 0.42, gain: 0.18, type: 'sawtooth', delay: i * 0.13 }));
   },
 };
+
+/**
+ * 効果音はゲーム進行の途中から呼ばれる。ここで例外が漏れると更新処理が中断し、
+ * 「報酬は入ったが敵が消えない」といった壊れ方をするので、音は絶対に投げさせない。
+ */
+export const sfx = Object.fromEntries(
+  Object.entries(EFFECTS).map(([name, fn]) => [name, (...args) => {
+    try { fn(...args); } catch { /* 音が鳴らないだけでゲームは続ける */ }
+  }])
+);
 
 export const audio = {
   /** 最初のユーザー操作で呼ぶ。ブラウザの自動再生制限のため。 */

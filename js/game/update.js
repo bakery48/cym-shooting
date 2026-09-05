@@ -1,4 +1,4 @@
-import { CONFIG, COLOR, PALETTE, TYPES } from '../config.js';
+import { CONFIG, COLOR, PALETTE, TYPES, ANY } from '../config.js';
 import { view } from '../core/view.js';
 import { fireInterval } from '../core/state.js';
 import { sfx } from '../core/audio.js';
@@ -54,13 +54,21 @@ function updatePods(G, dt) {
   }
 }
 
+/**
+ * ポッドの標的。自分の種類の敵を優先し、居ないときだけ白い敵を撃つ。
+ * 白を同列に扱うと、ポッドが本来の担当を放って安い敵に構い始めるため。
+ */
 function findPodTarget(G, p) {
+  return nearest(G, p, p.type) ?? nearest(G, p, ANY);
+}
+
+function nearest(G, p, type) {
   let best = null;
   let bestDist = CONFIG.pod.range * view.S;
   for (const e of G.enemies) {
     // 装甲敵はポッドの弾を弾くので狙わない。
     // 既にポッドより下にいる敵も、撃っても届かないので対象外にする。
-    if (e.type !== p.type || e.armored || e.y > p.y) continue;
+    if (e.type !== type || e.armored || e.y > p.y) continue;
     const d = Math.hypot(e.x - p.x, e.y - p.y);
     if (d < bestDist) { bestDist = d; best = e; }
   }
@@ -111,7 +119,7 @@ function resolveBulletHit(G, b, i) {
     const e = G.enemies[j];
     if (Math.hypot(e.x - b.x, e.y - b.y) > e.r + b.r) continue;
 
-    if (e.type !== b.type) {                     // 種類違い：弾かれる
+    if (e.type !== b.type && e.type !== ANY) {   // 種類違い：弾かれる（白い敵はどの弾でも通る）
       burst(G, b.x, b.y, PALETTE.deflect, 4);
       if (b.from === 'ship') sfx.deflect();      // 空振りが分かるのは手で撃った時だけでよい
       G.bullets.splice(i, 1);
@@ -129,14 +137,16 @@ function resolveBulletHit(G, b, i) {
     burst(G, b.x, b.y, COLOR[e.type], 5);
 
     if (e.hp <= 0) {
-      const value = e.armored ? CONFIG.kill.armored : CONFIG.kill.normal;
+      const value = e.armored ? CONFIG.kill.armored
+                  : e.type === ANY ? CONFIG.kill.chaff
+                  : CONFIG.kill.normal;
       G.money += value;
       G.st.earned += value;
       if (e.armored) G.st.armored++;
       if (b.from === 'ship') G.st.ship++; else G.st.pod++;
       burst(G, e.x, e.y, COLOR[e.type], e.armored ? 26 : 12);
-      if (e.armored) sfx.killArmored(e.type); else sfx.kill(e.type);
       G.enemies.splice(j, 1);
+      if (e.armored) sfx.killArmored(e.type); else sfx.kill(e.type);
     }
 
     if (b.pierce > 0 && b.from === 'ship') b.pierce--;

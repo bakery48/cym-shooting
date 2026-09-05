@@ -1,12 +1,17 @@
-import { CONFIG } from '../config.js';
+import { CONFIG, ANY } from '../config.js';
 import { pickType } from '../stages.js';
 import { view } from '../core/view.js';
 
 export function spawnEnemy(G) {
-  const chance = G.rules.armoredChance;
-  const armored = Math.random() < chance.base + chance.perSec * G.t;
-  const type = pickType(G.rules.weights);
-  const r = 18 * view.sc;
+  // 白い敵と装甲は排他。片方は「どの弾でも通る」、もう片方は「自機の弾しか通らない」で、
+  // 要求が正反対になるため同居させない。
+  const chaff = Math.random() < G.rules.chaffChance.base + G.rules.chaffChance.perSec * G.t;
+  const ac = G.rules.armoredChance;
+  const armored = !chaff && Math.random() < ac.base + ac.perSec * G.t;
+
+  const type = chaff ? ANY : pickType(G.rules.weights);
+  const r = 18 * view.sc * (chaff ? CONFIG.chaffRadius : 1);
+
   G.enemies.push({
     type,
     x: r * 2 + Math.random() * Math.max(1, view.W - r * 4),

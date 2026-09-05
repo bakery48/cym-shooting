@@ -6,8 +6,11 @@ export const CONFIG = {
   runSeconds: 180,
   maxBreach: 10,
 
-  kill: { normal: 12, armored: 95 },
+  kill: { normal: 12, armored: 95, chaff: 5 },
   armoredChance: { base: 0.05, perSec: 0.0004 },
+  // 白い敵（弾種を問わない下位の敵）の出現率。装甲とは排他。
+  chaffChance: { base: 0.18, perSec: 0 },
+  chaffRadius: 0.78,          // 通常敵に対する半径比。小さいことで「下位」を示す
 
   spawn: { start: 1.00, min: 0.30, rampPerSec: 0.0038 },
   fall:  { start: 46,   rampPerSec: 0.55 },   // px/秒（縦640px基準）
@@ -35,9 +38,16 @@ export const CONFIG = {
 };
 
 export const TYPES = ['circle', 'tri', 'sq'];
+
+/**
+ * 弾種を持たない敵の型。どの弾でも通る代わりに報酬が低い。
+ * TYPES に入れないのは、自機の砲塔もポッドもこの型を「持てない」ため。
+ */
+export const ANY = 'any';
 // 弾種と敵種の対応そのもの。装飾ではなく情報なので、他の用途に流用しない（企画書 §7）
-export const COLOR = { circle: '#ffe23c', tri: '#2fe4f0', sq: '#ff53d6' };   // Y / C / M
-export const MARK  = { circle: '●', tri: '▲', sq: '■' };
+// 白は「どの弾種にも属さない」ことの表明。色が無い＝要求が無い。
+export const COLOR = { circle: '#ffe23c', tri: '#2fe4f0', sq: '#ff53d6', [ANY]: '#e8edff' };
+export const MARK  = { circle: '●', tri: '▲', sq: '■', [ANY]: '◆' };
 
 export const PALETTE = {
   bg: '#232a45',

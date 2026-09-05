@@ -20,6 +20,7 @@ export const STAGES = [
     id: 'a1', kind: 'stage', name: '第1区', title: '展開',
     desc: '3種が均等に降りてくる。まず全部を手で捌き、ポッドで手を空ける。',
     weights: { circle: 1, tri: 1, sq: 1 },
+    chaffChance: { base: 0.24 },   // 白い敵を多めにして、弾種を合わせる意味を先に覚えさせる
     shop: ALL,
   },
   {
@@ -42,6 +43,7 @@ export const STAGES = [
     desc: '装甲付きが多い。ポッドでは壊せないので、手はほぼ装甲専任になる。',
     weights: { circle: 1, tri: 1, sq: 1 },
     armoredChance: { base: 0.20, perSec: 0.0012 },
+    chaffChance: { base: 0.10 },
     spawn: { start: 0.95, min: 0.34, rampPerSec: 0.0036 },
     shop: ALL,
   },
@@ -74,6 +76,7 @@ export const STAGES = [
     unlockAfter: 'a2',
     weights: { circle: 1, tri: 1, sq: 1 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
+    chaffChance: { base: 0.30 },   // ポッドが無いぶん、弾種を問わない敵で手を回す
     spawn: { start: 1.05, min: 0.40, rampPerSec: 0.0030 },
     shop: HAND_ONLY,
   },
@@ -83,6 +86,7 @@ export const STAGES = [
     unlockAfter: 'a2',
     weights: { circle: 1, tri: 1, sq: 1 },
     armoredChance: { base: 0.30, perSec: 0.0015 },
+    chaffChance: { base: 0.08 },
     spawn: { start: 0.70, min: 0.24, rampPerSec: 0.0038 },
     startUp: { podCircle: true, podTri: true, podSq: true },
     shop: HAND_ONLY,
@@ -99,6 +103,7 @@ export function resolveRules(stage) {
     spawn: { ...CONFIG.spawn, ...stage.spawn },
     fall: { ...CONFIG.fall, ...stage.fall },
     armoredChance: { ...CONFIG.armoredChance, ...stage.armoredChance },
+    chaffChance: { ...CONFIG.chaffChance, ...stage.chaffChance },
     weights: stage.weights,
     shop: stage.shop,
     startMoney: stage.startMoney ?? 0,

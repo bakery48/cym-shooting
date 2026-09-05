@@ -1,9 +1,17 @@
-import { COLOR, MARK, PALETTE, TYPES, TURN_STEP } from '../config.js';
+import { COLOR, MARK, PALETTE, TYPES, TURN_STEP, ANY } from '../config.js';
 import { view } from '../core/view.js';
 
 export function shapePath(ctx, type, x, y, r, rot) {
   ctx.beginPath();
   if (type === 'circle') { ctx.arc(x, y, r, 0, Math.PI * 2); return; }
+  if (type === ANY) {
+    // 菱形。●▲■ のどれとも違う形にして、白い ● と見間違えないようにする。
+    const d = r * 1.15;
+    ctx.moveTo(x, y - d); ctx.lineTo(x + d, y);
+    ctx.lineTo(x, y + d); ctx.lineTo(x - d, y);
+    ctx.closePath();
+    return;
+  }
   if (type === 'tri') {
     for (let i = 0; i < 3; i++) {
       const a = -Math.PI / 2 + i * TURN_STEP + rot * 0.15;
@@ -65,9 +73,13 @@ function drawEnemies(ctx, G) {
     if (e.armored) { ctx.shadowColor = PALETTE.armor; ctx.shadowBlur = 14; }
     if (e.hit)     { ctx.shadowColor = '#ffffff';     ctx.shadowBlur = 18 * e.hit; }
 
+    // 白い敵はグローも枠も持たない。装甲敵（色つきの塗り＋白い枠）と読み違えないよう、
+    // 見た目の情報量そのものを落としておく。
     ctx.fillStyle = COLOR[e.type];
+    ctx.globalAlpha = e.type === ANY ? 0.82 : 1;
     shapePath(ctx, e.type, e.x, e.y, e.r, e.rot);
     ctx.fill();
+    ctx.globalAlpha = 1;
 
     if (e.armored) {
       ctx.strokeStyle = PALETTE.armor;
