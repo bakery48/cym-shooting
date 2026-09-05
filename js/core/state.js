@@ -6,16 +6,22 @@ import { sfx } from './audio.js';
 /** 弾種 → ポッド強化ID の対応。 */
 const POD_ID = { circle: 'podCircle', tri: 'podTri', sq: 'podSq' };
 
-export function newGame(stage) {
+export function newGame(stage, wallet) {
   const rules = resolveRules(stage);
+
+  // 財布から持ち込めるのは、その面で買える強化だけ
+  const carried = {};
+  for (const id of rules.carry) if (wallet.up[id]) carried[id] = wallet.up[id];
+
   const G = {
     stage, rules,
     running: false, over: false, paused: false, cleared: false,
-    t: 0, money: rules.startMoney, breach: 0,
+    t: 0, money: wallet.money + rules.startMoney, breach: 0,
     ship: { x: view.W / 2, y: 0, idx: 0, ang: 0, targetAng: 0, cd: 0 },
     enemies: [], bullets: [], parts: [], pods: [],
     nextSpawn: 0.6, shake: 0, flash: 0,
-    up: { podCircle: false, podTri: false, podSq: false, rate: 0, pierce: 0, spread: 0, ...rules.startUp },
+    up: { podCircle: false, podTri: false, podSq: false, rate: 0, pierce: 0, spread: 0,
+          ...carried, ...rules.startUp },
     st: { ship: 0, pod: 0, armored: 0, breach: 0, earned: 0 },
     endReason: '',
   };

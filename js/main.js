@@ -3,7 +3,7 @@ import { STAGES, stageById, isUnlocked } from './stages.js';
 import { view, attachView, resizeView } from './core/view.js';
 import { newGame } from './core/state.js';
 import { createInput } from './core/input.js';
-import { loadProgress, recordRun, saveProgress } from './core/save.js';
+import { loadProgress, recordRun, saveProgress, saveWallet, resetProgress } from './core/save.js';
 import { audio, sfx } from './core/audio.js';
 import { update } from './game/update.js';
 import { draw } from './game/render.js';
@@ -60,7 +60,7 @@ elVol.addEventListener('change', () => sfx.kill('circle'));
 elMute.addEventListener('change', () => { applyAudioSettings(); if (!audio.muted) sfx.kill('circle'); });
 
 const hud = createHud();
-const shop = createShop($('shop'), getGame);
+const shop = createShop($('shop'), getGame, persistWallet);
 const select = createSelect(() => progress, begin);
 const input = createInput({
   canvas, getGame,
@@ -100,11 +100,17 @@ function handleResize() {
 new ResizeObserver(handleResize).observe($('stage'));
 addEventListener('resize', handleResize);
 
+/** 所持金と強化はステージをまたいで残る。ランの区切りごとに書き出す。 */
+function persistWallet() {
+  if (!G) return;
+  saveWallet(progress, G.money, G.up, G.rules.carry);
+}
+
 function begin(stage) {
   G = null;              // 旧ランの座標を新しい寸法に引きずらせない
   showScreen(null);      // HUDとショップを出してから測る（出す前だと盤面が画面より高くなる）
   handleResize();
-  G = newGame(stage);
+  G = newGame(stage, progress.wallet);
   G.ship.x = view.W / 2;
   G.running = true;
   publish();
@@ -116,6 +122,7 @@ function begin(stage) {
 }
 
 function openSelect() {
+  persistWallet();     // ラン半ばで抜けても稼ぎと買い物を失わせない
   G = null;
   publish();
   select.paint();
@@ -137,9 +144,10 @@ function gameOver(reason, cleared) {
   G.cleared = cleared;
   G.endReason = reason;
 
+  persistWallet();
   const updated = recordRun(progress, G.stage.id, cleared, G.st);
   if (cleared) sfx.clear(); else sfx.fail();
-  renderResults(G, progress.best[G.stage.id], updated);
+  renderResults(G, progress.best[G.stage.id], updated, progress.wallet);
 
   // 次に進める面があればそれを案内する
   const next = nextStage(G.stage);
@@ -183,6 +191,16 @@ $('btn-next').addEventListener('click', (e) => {
 for (const id of ['btn-select', 'btn-quit']) {
   $(id).addEventListener('click', openSelect);
 }
+
+$('btn-reset').addEventListener('click', () => {
+  if (!confirm('所持金・強化・クリア記録をすべて消します。よろしいですか？')) return;
+  const settings = progress.settings;
+  progress = resetProgress();
+  progress.settings = settings;      // 音量設定は進行状況ではないので残す
+  saveProgress(progress);
+  publish();
+  select.paint();
+});
 
 handleResize();
 openSelect();

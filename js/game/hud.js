@@ -28,7 +28,7 @@ export function createHud() {
 }
 
 /** リザルト。数値そのものより「手動と自動の比率」が見えることが目的（企画書 §9）。 */
-export function renderResults(G, best, updated) {
+export function renderResults(G, best, updated, wallet) {
   const s = G.st;
   const total = s.ship + s.pod;
   const autoRate = total ? Math.round(s.pod / total * 100) : 0;
@@ -43,5 +43,6 @@ export function renderResults(G, best, updated) {
     <dt>装甲付き</dt><dd>${s.armored}</dd>
     <dt>ライン突破</dt><dd>${s.breach}</dd>
     <dt>総収入</dt><dd>${Math.floor(s.earned)}${isNew('earned')}</dd>
-    <dt>自己ベスト</dt><dd>${Math.floor(best?.earned ?? 0)}</dd>`;
+    <dt>自己ベスト</dt><dd>${Math.floor(best?.earned ?? 0)}</dd>
+    <dt>持ち越し</dt><dd>${Math.floor(wallet.money)}</dd>`;
 }

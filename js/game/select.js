@@ -1,4 +1,5 @@
 import { STAGES, isUnlocked, resolveRules } from '../stages.js';
+import { SHOP } from './shop.js';
 
 const $ = (id) => document.getElementById(id);
 const fmtTime = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
@@ -12,6 +13,7 @@ export function createSelect(getProgress, onPick) {
 
   function paint() {
     const progress = getProgress();
+    paintWallet(progress.wallet);
     listEl.innerHTML = '';
     let lastKind = null;
 
@@ -47,4 +49,19 @@ export function createSelect(getProgress, onPick) {
   }
 
   return { paint };
+}
+
+/**
+ * 所持金と強化はステージをまたいで残るので、面を選ぶ前に手持ちが見えている必要がある。
+ */
+function paintWallet(wallet) {
+  $('wallet-money').textContent = Math.floor(wallet.money);
+  const owned = SHOP
+    .map((u) => {
+      const v = wallet.up[u.id];
+      if (!v) return null;
+      return u.lv ? `${u.name} Lv${v}` : u.name;
+    })
+    .filter(Boolean);
+  $('wallet-up').textContent = owned.length ? owned.join(' ・ ') : '強化なし';
 }

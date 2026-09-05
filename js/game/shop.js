@@ -25,7 +25,7 @@ export const SHOP = [
 const scaled = (c, lv) => Math.round(c.base * Math.pow(c.mul, lv));
 const isDone = (u, G) => (u.owned ? u.owned(G) : u.lv(G) >= u.max);
 
-export function createShop(rootEl, getGame) {
+export function createShop(rootEl, getGame, onPurchase) {
   const buttons = SHOP.map((u, i) => {
     const b = document.createElement('button');
     b.className = 'buy';
@@ -50,6 +50,7 @@ export function createShop(rootEl, getGame) {
     G.money -= cost;
     u.buy(G);
     sfx.buy();
+    onPurchase();          // 強化は永続なので、買った時点で書き出す
     paint(true);
     return true;
   }
