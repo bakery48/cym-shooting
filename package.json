@@ -1,0 +1,41 @@
+{
+  "name": "cym-shooting",
+  "productName": "回転砲塔",
+  "version": "0.1.0",
+  "description": "同じ種類の弾でしか壊せない敵を捌く、3分1ランの縦シューティング",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "node tools/serve.mjs 8080",
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "jp.bakery48.cymshooting",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "index.html",
+      "css/**",
+      "js/**",
+      "electron/**",
+      "package.json"
+    ],
+    "win": {
+      "target": "dir"
+    },
+    "linux": {
+      "target": "dir",
+      "category": "Game"
+    },
+    "mac": {
+      "target": "dir",
+      "category": "public.app-category.games"
+    }
+  }
+}
