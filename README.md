@@ -24,8 +24,16 @@ npm run dev            # http://localhost:8080 （依存なし・Node標準ラ�
 npm run build:single   # dist/cym-shooting.html （約50KB）
 ```
 
-同じ内容をリポジトリの `index.html` から直接配信してもよい（GitHub Pages など）。
-その場合はモジュール版がそのまま動くので、ビルドは不要。
+### スマホで遊ぶ（GitHub Pages）
+
+リポジトリの `index.html` をそのまま配信すればよく、ビルドは不要。
+パス指定はすべて相対なので、`/<リポジトリ名>/` 配下でも動く。
+
+1. Settings → Pages → Source を **Deploy from a branch**
+2. Branch に `claude/steam-sales-md-review-xpccam` と `/ (root)` を選んで Save
+3. 1分ほどで `https://bakery48.github.io/cym-shooting/` が開く
+
+push するたびに自動で更新される。公開リポジトリなのでURLを知っていれば誰でも見られる。
 
 デスクトップ版（Steam向けのシェル）を動かす場合:
 
