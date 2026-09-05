@@ -31,6 +31,7 @@ npm run dist           # release/ に配布用の展開済みディレクトリ�
 | 砲塔を回す（●→▲→■→●） | クリック / タップ / <kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd> |
 | 強化を買う | クリック / <kbd>1</kbd>〜<kbd>6</kbd> |
 | 中断 | <kbd>Esc</kbd> / <kbd>P</kbd> |
+| 消音 | <kbd>M</kbd> |
 
 射撃は常時オート。プレイヤーは撃たない。
 
@@ -48,7 +49,8 @@ js/stages.js          面とモードの定義（CONFIG を部分的に上書き
 js/core/view.js       キャンバス寸法とスケール（S = 画面高 / 640）
 js/core/state.js      ラン状態の生成、ポッド同期、砲塔回転
 js/core/input.js      ポインタ・キーボードを「移動」と「回転」に正規化
-js/core/save.js       開放状況と自己ベストの保存（localStorage）
+js/core/save.js       開放状況・自己ベスト・音量設定の保存（localStorage）
+js/core/audio.js      効果音の合成（音源ファイルは使わない）
 js/game/entities.js   敵・弾・粒子の生成
 js/game/update.js     1フレームぶんの更新
 js/game/render.js     Canvas描画（画像アセットは使わない）
@@ -82,7 +84,8 @@ tools/serve.mjs       開発用の静的サーバ
 
 企画書から動かしてはいけないもの:
 
-1. **画像アセットを使わない。** 円・三角・矩形・線・粒子だけで成立させる
+1. **画像アセットを使わない。** 円・三角・矩形・線・粒子だけで成立させる。
+   音も同じで、音源ファイルを持たず Web Audio API で合成する
 2. **強化は必ず画面上の変化として現れる。** 数値だけ増える強化は追加しない
 3. **色は装飾ではなく情報。** ●▲■ の3色は弾種と敵種の対応そのもので、他に流用しない
 4. **チューニング値は `js/config.js` に集約する**

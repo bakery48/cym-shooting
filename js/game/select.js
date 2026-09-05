@@ -40,7 +40,7 @@ export function createSelect(getProgress, onPick) {
           <span class="meta">${unlocked ? fmtTime(rules.runSeconds) : '未開放'}</span>
         </span>
         <span class="ds">${unlocked ? stage.desc : '前の区をクリアすると開く'}</span>
-        <span class="bs">${best ? `ベスト ${Math.floor(best.earned)}` : ''}${cleared ? ' ・ クリア済' : ''}</span>`;
+        <span class="bs">${best?.earned ? `ベスト ${Math.floor(best.earned)}` : ''}${cleared ? ' ・ クリア済' : ''}</span>`;
       b.addEventListener('click', () => onPick(stage));
       listEl.appendChild(b);
     }

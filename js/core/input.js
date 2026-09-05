@@ -15,8 +15,9 @@ const MOVE_LEFT  = new Set(['KeyA', 'ArrowLeft']);
 const MOVE_RIGHT = new Set(['KeyD', 'ArrowRight']);
 const ROTATE     = new Set(['Space', 'KeyW', 'ArrowUp']);
 const PAUSE      = new Set(['Escape', 'KeyP']);
+const MUTE       = new Set(['KeyM']);
 
-export function createInput({ canvas, getGame, onPause, onShopHotkey }) {
+export function createInput({ canvas, getGame, onPause, onShopHotkey, onToggleMute }) {
   const keys = new Set();
   const state = {
     pointerX: null,   // ポインタで指定された絶対X（null なら未指定）
@@ -74,6 +75,7 @@ export function createInput({ canvas, getGame, onPause, onShopHotkey }) {
       return;
     }
     if (PAUSE.has(e.code)) { e.preventDefault(); onPause(); return; }
+    if (MUTE.has(e.code)) { e.preventDefault(); onToggleMute(); return; }
 
     const shopIndex = '123456'.indexOf(e.key);
     if (shopIndex >= 0) { e.preventDefault(); onShopHotkey(shopIndex); return; }

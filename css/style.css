@@ -113,3 +113,13 @@ button.big.ghost{background:transparent;color:var(--ink);
   .buy .n{font-size:12.5px}
   .buy .k{top:50%;transform:translateY(-50%)}
 }
+
+/* 音量設定。1要素を今出ている画面の .slot へ移して使う */
+#options{display:flex;gap:18px;align-items:center;flex-wrap:wrap;justify-content:center;
+  font-size:11.5px;color:var(--ink-dim)}
+.slot{display:flex;justify-content:center;width:100%}
+.opt{display:flex;align-items:center;gap:7px;cursor:pointer}
+.opt input[type=checkbox]{accent-color:var(--c-tri);width:15px;height:15px;cursor:pointer}
+.opt input[type=range]{accent-color:var(--c-tri);width:120px;cursor:pointer}
+.opt input[type=range]:disabled{opacity:.4;cursor:default}
+.opt:focus-within{color:var(--ink)}

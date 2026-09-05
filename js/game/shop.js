@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { syncPods } from '../core/state.js';
+import { sfx } from '../core/audio.js';
 
 /**
  * ラン中に買える強化の定義。
@@ -48,6 +49,7 @@ export function createShop(rootEl, getGame) {
     if (G.money < cost) return false;
     G.money -= cost;
     u.buy(G);
+    sfx.buy();
     paint(true);
     return true;
   }

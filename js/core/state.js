@@ -1,6 +1,7 @@
 import { CONFIG, TYPES, TURN_STEP } from '../config.js';
 import { resolveRules } from '../stages.js';
 import { view } from './view.js';
+import { sfx } from './audio.js';
 
 /** 弾種 → ポッド強化ID の対応。 */
 const POD_ID = { circle: 'podCircle', tri: 'podTri', sq: 'podSq' };
@@ -46,4 +47,5 @@ export function syncPods(G) {
 export function rotateTurret(G) {
   G.ship.idx = (G.ship.idx + 1) % 3;
   G.ship.targetAng += TURN_STEP;
+  sfx.rotate(TYPES[G.ship.idx]);
 }

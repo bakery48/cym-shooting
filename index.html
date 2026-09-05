@@ -25,9 +25,18 @@
           <dt>砲塔を回す</dt><dd>クリック / タップ / <kbd>Space</kbd> <kbd>W</kbd> <kbd>↑</kbd></dd>
           <dt>強化を買う</dt><dd>クリック / <kbd>1</kbd>〜<kbd>6</kbd></dd>
           <dt>中断</dt><dd><kbd>Esc</kbd> <kbd>P</kbd></dd>
+          <dt>消音</dt><dd><kbd>M</kbd></dd>
         </dl>
+        <div class="slot"></div>
         <div id="select-list"></div>
       </div>
+    </div>
+
+    <div id="options">
+      <label class="opt"><input type="checkbox" id="opt-mute"> 消音 <kbd>M</kbd></label>
+      <label class="opt">音量
+        <input type="range" id="opt-volume" min="0" max="100" step="5" aria-label="音量">
+      </label>
     </div>
 
     <div class="screen" id="screen-pause" hidden>
@@ -36,6 +45,7 @@
         <button class="big" id="btn-resume">再開</button>
         <button class="big ghost" id="btn-quit">区を選ぶ</button>
       </div>
+      <div class="slot"></div>
     </div>
 
     <div class="screen" id="screen-end" hidden>

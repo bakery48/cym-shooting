@@ -1,6 +1,7 @@
 import { CONFIG, COLOR, PALETTE, TYPES } from '../config.js';
 import { view } from '../core/view.js';
 import { fireInterval } from '../core/state.js';
+import { sfx } from '../core/audio.js';
 import { spawnEnemy, shoot, burst } from './entities.js';
 
 export function update(G, dt, input, onGameOver) {
@@ -85,6 +86,7 @@ function updateEnemies(G, dt) {
       G.breach++; G.st.breach++;
       G.shake = 1; G.flash = 1;
       burst(G, e.x, view.LINE, PALETTE.bad, 16);
+      sfx.breach();
     }
   }
 }
@@ -111,12 +113,14 @@ function resolveBulletHit(G, b, i) {
 
     if (e.type !== b.type) {                     // 種類違い：弾かれる
       burst(G, b.x, b.y, PALETTE.deflect, 4);
+      if (b.from === 'ship') sfx.deflect();      // 空振りが分かるのは手で撃った時だけでよい
       G.bullets.splice(i, 1);
       return;
     }
     if (e.armored && b.from === 'pod') {         // 装甲：ポッドの弾は通らない
       e.hit = 1;
       burst(G, b.x, b.y, PALETTE.armorSpark, 5);
+      sfx.armorDeflect();
       G.bullets.splice(i, 1);
       return;
     }
@@ -131,6 +135,7 @@ function resolveBulletHit(G, b, i) {
       if (e.armored) G.st.armored++;
       if (b.from === 'ship') G.st.ship++; else G.st.pod++;
       burst(G, e.x, e.y, COLOR[e.type], e.armored ? 26 : 12);
+      if (e.armored) sfx.killArmored(e.type); else sfx.kill(e.type);
       G.enemies.splice(j, 1);
     }
 

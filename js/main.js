@@ -3,7 +3,8 @@ import { STAGES, stageById, isUnlocked } from './stages.js';
 import { view, attachView, resizeView } from './core/view.js';
 import { newGame } from './core/state.js';
 import { createInput } from './core/input.js';
-import { loadProgress, recordRun } from './core/save.js';
+import { loadProgress, recordRun, saveProgress } from './core/save.js';
+import { audio, sfx } from './core/audio.js';
 import { update } from './game/update.js';
 import { draw } from './game/render.js';
 import { createShop } from './game/shop.js';
@@ -32,6 +33,32 @@ const publish = () => {
   window.__PROGRESS = progress;
 };
 
+// 音量設定の復元と、最初のユーザー操作でのオーディオ開始（自動再生制限のため）
+audio.setVolume(progress.settings.volume);
+audio.setMuted(progress.settings.muted);
+for (const ev of ['pointerdown', 'keydown']) {
+  addEventListener(ev, () => audio.unlock(), { once: true });
+}
+
+const elVol = $('opt-volume');
+const elMute = $('opt-mute');
+
+function applyAudioSettings({ persist } = { persist: true }) {
+  audio.setVolume(Number(elVol.value) / 100);
+  audio.setMuted(elMute.checked);
+  elVol.disabled = elMute.checked;
+  if (!persist) return;
+  progress.settings = { muted: audio.muted, volume: audio.volume };
+  saveProgress(progress);
+}
+
+elVol.value = String(Math.round(progress.settings.volume * 100));
+elMute.checked = progress.settings.muted;
+applyAudioSettings({ persist: false });
+elVol.addEventListener('input', () => applyAudioSettings());
+elVol.addEventListener('change', () => sfx.kill('circle'));
+elMute.addEventListener('change', () => { applyAudioSettings(); if (!audio.muted) sfx.kill('circle'); });
+
 const hud = createHud();
 const shop = createShop($('shop'), getGame);
 const select = createSelect(() => progress, begin);
@@ -39,10 +66,18 @@ const input = createInput({
   canvas, getGame,
   onPause: togglePause,
   onShopHotkey: (i) => shop.purchase(i),
+  onToggleMute: () => { elMute.checked = !elMute.checked; applyAudioSettings(); },
 });
+
+/** 音量設定は1つしか無いので、今出ている画面へ差し替えて置く。 */
+function moveOptionsTo(name) {
+  const slot = screens[name]?.querySelector('.slot');
+  if (slot) slot.appendChild($('options'));
+}
 
 function showScreen(name) {
   for (const [key, el] of Object.entries(screens)) el.hidden = key !== name;
+  moveOptionsTo(name);
   // ラン中でないときはHUDとショップを出さない（古い値が残って見えるため）
   document.body.classList.toggle('no-run', name === 'select');
 }
@@ -99,6 +134,7 @@ function gameOver(reason, cleared) {
   G.endReason = reason;
 
   const updated = recordRun(progress, G.stage.id, cleared, G.st);
+  if (cleared) sfx.clear(); else sfx.fail();
   renderResults(G, progress.best[G.stage.id], updated);
 
   // 次に進める面があればそれを案内する
