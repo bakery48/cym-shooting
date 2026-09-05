@@ -116,6 +116,8 @@ function handleResize() {
   for (const e of G.enemies) e.x = Math.max(0, Math.min(view.W, e.x * ratio));
   for (const b of G.bullets) b.x *= ratio;
   for (const p of G.parts) p.x *= ratio;
+  // 航跡は旧スケールでの相対座標なので、寸法が変わったら引き継がず捨てる
+  for (const p of G.pods) { p.trail.length = 0; p.trailT = 0; }
 }
 // HUDとショップの出し入れでも盤面の高さは変わるので、
 // window の resize だけでなく要素そのものの寸法変化を見る。

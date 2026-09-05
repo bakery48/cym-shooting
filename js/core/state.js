@@ -56,7 +56,8 @@ export function syncPods(G) {
   G.pods = wanted.map((type, i) => {
     const old = kept.find((p) => p.type === type);
     if (old) return old;
-    return { type, a: (i / wanted.length) * Math.PI * 2, x: 0, y: 0, cd: Math.random() * 0.4 };
+    return { type, a: (i / wanted.length) * Math.PI * 2, x: 0, y: 0, cd: Math.random() * 0.4,
+             trail: [], trailT: 0 };
   });
 }
 

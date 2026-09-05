@@ -1,4 +1,4 @@
-import { COLOR, MARK, PALETTE, TYPES, TURN_STEP, ANY } from '../config.js';
+import { CONFIG, COLOR, MARK, PALETTE, TYPES, TURN_STEP, ANY } from '../config.js';
 import { view } from '../core/view.js';
 
 export function shapePath(ctx, type, x, y, r, rot) {
@@ -40,6 +40,7 @@ export function draw(G) {
   drawShield(ctx, G, W, LINE);
   drawEnemies(ctx, G);
   drawBullets(ctx, G);
+  drawPodTrails(ctx, G);
   drawPods(ctx, G);
   drawWings(ctx, G);
   drawShip(ctx, G);
@@ -149,6 +150,45 @@ function drawBullets(ctx, G) {
     ctx.beginPath();
     ctx.ellipse(b.x, b.y, b.r * 0.7, b.r * 1.6, Math.atan2(b.vy, b.vx) - Math.PI / 2, 0, Math.PI * 2);
     ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * 公転の航跡。買うほど自機の周りが賑やかになる（企画書 §4）ことを、
+ * 点ではなく「回る帯」として見せるための描画。
+ *
+ * 加算合成は使わない ― 3色が重なって白くなると、白は「弾種を持たない」の
+ * 意味を持っているので嘘の情報になる（企画書 §7）。
+ */
+function drawPodTrails(ctx, G) {
+  const { width, alpha } = CONFIG.pod.trail;
+  const sh = G.ship;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (const p of G.pods) {
+    const t = p.trail;                       // 自機からの相対座標で持っている
+    if (t.length < 4) continue;
+    const n = t.length / 2;
+    ctx.strokeStyle = COLOR[p.type];
+
+    for (let i = 1; i < n; i++) {
+      const k = i / n;                       // 新しい点ほど 1 に近い
+      ctx.globalAlpha = k * k * alpha;       // 古い側を早めに消して尾を細く見せる
+      ctx.lineWidth = width * view.sc * k;
+      ctx.beginPath();
+      ctx.moveTo(sh.x + t[(i - 1) * 2], sh.y + t[(i - 1) * 2 + 1]);
+      ctx.lineTo(sh.x + t[i * 2], sh.y + t[i * 2 + 1]);
+      ctx.stroke();
+    }
+    // 帯の先端をポッド本体につなぐ
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = width * view.sc;
+    ctx.beginPath();
+    ctx.moveTo(sh.x + t[t.length - 2], sh.y + t[t.length - 1]);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }

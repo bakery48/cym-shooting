@@ -21,7 +21,15 @@ export const CONFIG = {
     keyboardSpeed: 420,   // px/秒（縦640px基準）: キー移動の速度
     edgeMargin: 24,
   },
-  pod: { orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.9, bulletSpeed: 460, range: 520 },
+  pod: {
+    orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.9, bulletSpeed: 460, range: 520,
+    // 公転の航跡。買ったポッドが「回る帯」として見えるようにするためのもの。
+    // 帯の長さは interval × samples × orbitSpeed（ラジアン）で決まる。
+    // 既定は約2.4秒 = 公転の約120度で、3基そろうとほぼ輪になる。
+    // 長さを変えたいときは samples ではなく interval を動かす ―
+    // samples は描画するセグメント数そのものなので、伸ばすと描画コストが増える。
+    trail: { samples: 28, interval: 0.085, width: 4.0, alpha: 0.55 },
+  },
 
   // 恒久強化（コア）。ラン内の弧に触れない範囲だけを受け持つ。
   meta: {

@@ -42,6 +42,7 @@ function updatePods(G, dt) {
     p.a += CONFIG.pod.orbitSpeed * dt;
     p.x = sh.x + Math.cos(p.a) * radius;
     p.y = sh.y + Math.sin(p.a) * radius * 0.72;
+    recordTrail(p, sh, dt);
 
     p.cd -= dt;
     if (p.cd > 0) continue;
@@ -60,6 +61,23 @@ function updatePods(G, dt) {
  * ポッドの標的。自分の種類の敵を優先し、居ないときだけ白い敵を撃つ。
  * 白を同列に扱うと、ポッドが本来の担当を放って安い敵に構い始めるため。
  */
+/**
+ * 公転の航跡。フレームごとではなく一定時間ごとに点を置く ―
+ * フレームレートで帯の長さが変わらないようにするため。
+ *
+ * 位置は自機からの相対で持つ。絶対座標だと、マウス追従で自機が瞬間移動したとき
+ * （カーソルを速く動かすと実際に起きる）航跡が直線に伸びて尾を引いてしまう。
+ * 相対で持てば、自機がどう動いても帯はきれいな公転の弧のままになる。
+ */
+function recordTrail(p, sh, dt) {
+  const { samples, interval } = CONFIG.pod.trail;
+  p.trailT += dt;
+  if (p.trailT < interval) return;
+  p.trailT = 0;
+  p.trail.push(p.x - sh.x, p.y - sh.y);
+  if (p.trail.length > samples * 2) p.trail.splice(0, p.trail.length - samples * 2);
+}
+
 function findPodTarget(G, p) {
   return nearest(G, p, p.type) ?? nearest(G, p, ANY);
 }
