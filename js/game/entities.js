@@ -18,6 +18,7 @@ function makeEnemy(G, { inks, armored, motion, role, x, r, fallMul }) {
     phase: Math.random() * Math.PI * 2,   // 木の葉の揺れの位相
     dive: role === 'dive' ? 'slow' : null, // slow -> warn -> fast
     diveT: 0,
+    dodgeDir: 0,                          // 回避が今ずれている向き（0 = 止まっている）
     hit: 0,
   };
 }

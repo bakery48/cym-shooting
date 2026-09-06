@@ -45,7 +45,9 @@ export const CONFIG = {
   // 落ち方のバリエーション。形を統一したぶん、差は挙動で付ける。
   motion: {
     leaf:  { swayHz: 0.55, swayPx: 46, fallMul: 0.78, spin: 2.4 },
-    dodge: { fallMul: 0.62, speed: 92, senseY: 190, senseX: 46 },
+    // 弾を見て避けるのではなく、**自機と同じ縦軸に居続けないように**
+    // じりじり横へずれる。keepX まで離れたら止まる（常に逃げ続けない）。
+    dodge: { fallMul: 0.62, speed: 58, keepX: 118 },
   },
 
   ship: {

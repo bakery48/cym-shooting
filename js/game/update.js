@@ -145,7 +145,7 @@ function updateEnemies(G, dt) {
  *
  *   drift  まっすぐ落ちる
  *   leaf   木の葉のように左右に揺れながら、少し遅く落ちる
- *   dodge  遅い代わりに、下から来る弾を見て横に逃げる
+ *   dodge  遅い代わりに、自機と同じ縦軸から常にずれ続ける
  */
 function moveEnemy(G, e, dt, base) {
   const m = CONFIG.motion;
@@ -159,7 +159,7 @@ function moveEnemy(G, e, dt, base) {
     e.rot += dt * m.leaf.spin * Math.sin(e.phase);
   } else if (e.motion === 'dodge') {
     e.y += baseFall * m.dodge.fallMul * dt;
-    e.vx = dodgeDirection(G, e) * m.dodge.speed * view.S;
+    e.vx = dodgeDrift(G, e) * m.dodge.speed * view.S;
     e.x += e.vx * dt;
     e.rot += dt * 0.8;
   } else {
@@ -206,24 +206,36 @@ function diveMul(e, dt) {
   return d.fastMul;
 }
 
-/** 下から迫る弾のうち最も近いものと逆へ逃げる。無ければ動かない。 */
-function dodgeDirection(G, e) {
-  const { senseY, senseX } = CONFIG.motion.dodge;
-  let threat = null;
-  let bestDy = senseY * view.S;
+/**
+ * 回避。**弾を見て避けるのではなく、自機と同じ縦軸に居続けないようにずれる。**
+ *
+ * 弾に反応させると「撃った瞬間に逃げる」ので、当たらない理由がプレイヤーから
+ * 見えない（撃つ → 外れる、を繰り返すだけになる）。自機の位置だけを見て
+ * じりじりずれるなら、**自分がどこに立っているか**が理由になり、
+ * 追い込む・回り込むという手が意味を持つ。
+ *
+ * ずれ終わったら止まる。常に逃げ続けると端に張り付いて的になるだけで、
+ * 「ずらす」という挙動も読めなくなる。
+ */
+function dodgeDrift(G, e) {
+  const range = CONFIG.motion.dodge.keepX * view.S;
+  const dx = e.x - G.ship.x;
 
-  for (const b of G.bullets) {
-    if (b.vy >= 0) continue;                       // 上に向かう弾だけが脅威
-    const dy = b.y - e.y;
-    if (dy <= 0 || dy > bestDy) continue;
-    if (Math.abs(b.x - e.x) > senseX * view.sc) continue;
-    bestDy = dy; threat = b;
+  // 十分ずれたら止まる。次に自機が寄ってきたら、また向きを選び直す。
+  if (Math.abs(dx) >= range) { e.dodgeDir = 0; return 0; }
+
+  if (!e.dodgeDir) {
+    e.dodgeDir = dx === 0 ? (e.x < view.W / 2 ? 1 : -1) : Math.sign(dx);
   }
-  if (!threat) return 0;
-  // 弾が真下なら、画面の広いほうへ逃げる
-  const dx = e.x - threat.x;
-  if (Math.abs(dx) < 1) return e.x < view.W / 2 ? 1 : -1;
-  return Math.sign(dx);
+  // 端に詰まったら向きを変えて、自機の上を横切って反対側へ抜ける。
+  // そのまま張り付かせると、動かない的が端に溜まっていくだけになる。
+  const edge = e.r + 2;
+  if ((e.dodgeDir < 0 && e.x <= edge) || (e.dodgeDir > 0 && e.x >= view.W - edge)) {
+    e.dodgeDir = -e.dodgeDir;
+  }
+  // 自機に近いほど速くずれる（危ない位置ほど強く逃げるのが読みやすい）。
+  // 下限を残すのは、境界へ漸近して永久に止まらなくなるのを防ぐため。
+  return e.dodgeDir * (0.3 + 0.7 * (1 - Math.abs(dx) / range));
 }
 
 /**

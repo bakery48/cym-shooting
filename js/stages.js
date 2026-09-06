@@ -76,7 +76,7 @@ export const STAGES = [
   },
   {
     id: '2-1', kind: 'stage', name: '2-1', title: '回避',
-    desc: 'ゆっくり横に逃げる敵が混じる。狙って撃つ手が要る。',
+    desc: '自機の真上から常にずれていく敵が混じる。追い込む位置取りが要る。',
     inks: TRIO,
     pool: {
       [M]: at(0, 2), [C]: at(0, 2), [Y]: at(0, 2),
@@ -87,7 +87,7 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 2, dodge: 2 },
     roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1 },
-    spawn: { rate0: 0.60, rate1: 6.4, curve: 2.0 },
+    spawn: { rate0: 0.60, rate1: 7.0, curve: 2.0 },
     shop: ALL,
   },
   {
