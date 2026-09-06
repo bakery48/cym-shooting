@@ -133,7 +133,8 @@ function updateEnemies(G, dt) {
 
     if (e.y - e.r >= view.LINE) {
       G.enemies.splice(i, 1);
-      absorbOrBreach(G, e.x);
+      // 運び屋は突破が余分に重い。優先順位をつける理由になる。
+      absorbOrBreach(G, e.x, e.role === 'carry' ? CONFIG.roles.carry.breachCost : 1);
     }
   }
 }
@@ -148,7 +149,7 @@ function updateEnemies(G, dt) {
 function moveEnemy(G, e, dt, base) {
   const m = CONFIG.motion;
   // 覚えたての混色はゆっくり落ちる（生成時に決まった係数）
-  const baseFall = base * (e.fallMul ?? 1);
+  const baseFall = base * (e.fallMul ?? 1) * diveMul(e, dt);
 
   if (e.motion === 'leaf') {
     e.phase += dt * m.leaf.swayHz * Math.PI * 2;
@@ -167,6 +168,27 @@ function moveEnemy(G, e, dt, base) {
 
   // 画面の外へは出さない（避け続けて端に張り付くのを防ぐ）
   e.x = Math.max(e.r, Math.min(view.W - e.r, e.x));
+}
+
+/**
+ * 急降下。遅く落ちてきて、途中から加速する。
+ * **加速の前に必ず予備動作を挟む** ― 予告なく速くなると
+ * 「見ていたのに落ちた」になって理不尽にしかならない。
+ */
+function diveMul(e, dt) {
+  if (!e.dive) return 1;
+  const d = CONFIG.roles.dive;
+
+  if (e.dive === 'slow') {
+    if (e.y >= view.LINE * d.triggerY) { e.dive = 'warn'; e.diveT = 0; }
+    return d.slowMul;
+  }
+  if (e.dive === 'warn') {
+    e.diveT += dt;
+    if (e.diveT >= d.warnSec) { e.dive = 'fast'; e.diveT = 0; }
+    return 0;                       // 予備動作のあいだは止まって「ためる」
+  }
+  return d.fastMul;
 }
 
 /** 下から迫る弾のうち最も近いものと逆へ逃げる。無ければ動かない。 */
@@ -189,8 +211,12 @@ function dodgeDirection(G, e) {
   return Math.sign(dx);
 }
 
-/** 防壁（恒久強化）が残っていれば突破を肩代わりする。ランごとに戻る。 */
-function absorbOrBreach(G, x) {
+/**
+ * 防壁（恒久強化）が残っていれば突破を肩代わりする。ランごとに戻る。
+ * 防壁は1体ぶんを丸ごと受け止める ― 運び屋の重い突破ほど守れるほうが、
+ * 「防壁を残しておく」判断に意味が出る。
+ */
+function absorbOrBreach(G, x, cost = 1) {
   if (G.shield > 0) {
     G.shield--;
     G.shieldFlash = 1;
@@ -198,9 +224,9 @@ function absorbOrBreach(G, x) {
     sfx.armorDeflect();
     return;
   }
-  G.breach++; G.st.breach++;
+  G.breach += cost; G.st.breach += cost;
   G.shake = 1; G.flash = 1;
-  burst(G, x, view.LINE, PALETTE.bad, 16);
+  burst(G, x, view.LINE, PALETTE.bad, 16 * cost);
   sfx.breach();
 }
 
@@ -247,7 +273,7 @@ function resolveBulletHit(G, b, i) {
     burst(G, b.x, b.y, COLOR[before], 5);
 
     if (e.inks === BARE) {
-      const value = reward(e.inks0 ?? before, e.armored);
+      const value = reward(e, e.inks0 ?? before);
       G.money += value;
       G.st.earned += value;
       if (e.armored) G.st.armored++;
@@ -271,9 +297,11 @@ function resolveBulletHit(G, b, i) {
  * 報酬は「元々乗っていたインクの本数」で決まる。剥がす手数がそのまま値段になる。
  * 撃破時に残っている inks で計算すると、必ず1本ぶんしか数えられない。
  */
-function reward(inks0, armored) {
+function reward(e, inks0) {
   if (inks0 === BARE) return CONFIG.kill.bare;
-  return CONFIG.kill.perInk * INK_COUNT[inks0] * (armored ? CONFIG.kill.armoredMul : 1);
+  const mul = (e.armored ? CONFIG.kill.armoredMul : 1)
+            * (e.role === 'carry' ? CONFIG.roles.carry.rewardMul : 1);
+  return Math.round(CONFIG.kill.perInk * INK_COUNT[inks0] * mul);
 }
 
 function updateParticles(G, dt) {

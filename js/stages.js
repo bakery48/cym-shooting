@@ -50,7 +50,7 @@ export const STAGES = [
     // 混色は1種類しかないので、中盤から出す
     pool: { [M]: at(0, 3), [C]: at(0, 3), [C | M]: at(0.30, [1, 3]) },
     motions: { drift: 3, leaf: 1 },
-    roles: { normal: 6, cluster: 1 },
+    roles: { normal: 6, cluster: 1, carry: 1 },
     bareChance: { base: 0.18 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
     shop: ALL,
@@ -68,7 +68,7 @@ export const STAGES = [
       [C | M | Y]: at(0.82, [0.4, 2]),
     },
     motions: { drift: 3, leaf: 1 },
-    roles: { normal: 6, cluster: 2, split: 2 },
+    roles: { normal: 6, cluster: 2, split: 2, carry: 1 },
     shop: ALL,
   },
   {
@@ -83,7 +83,7 @@ export const STAGES = [
       [C | M | Y]: at(0.72, [0.5, 3]),
     },
     motions: { drift: 3, leaf: 2, dodge: 2 },
-    roles: { normal: 5, cluster: 2, split: 2 },
+    roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1 },
     spawn: { start: 0.85, min: 0.26, rampPerSec: 0.0042 },
     shop: ALL,
   },
@@ -98,7 +98,7 @@ export const STAGES = [
       [C | M | Y]: at(0.40, [1, 9]),
     },
     motions: { drift: 3, leaf: 1, dodge: 1 },
-    roles: { normal: 6, split: 2 },
+    roles: { normal: 6, split: 2, dive: 1, carry: 1 },
     spawn: { start: 1.05, min: 0.38, rampPerSec: 0.0030 },
     bareChance: { base: 0.10 },
     shop: ALL,
@@ -116,7 +116,7 @@ export const STAGES = [
       [C | M | Y]: at(0.66, [0.4, 3]),
     },
     motions: { drift: 3, leaf: 2, dodge: 1 },
-    roles: { normal: 5, cluster: 2, split: 2 },
+    roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 2 },
     spawn: { start: 0.90, min: 0.22, rampPerSec: 0.0032 },
     fall: { start: 50, rampPerSec: 0.52 },
     armoredChance: { base: 0.08, perSec: 0.0006 },
@@ -134,7 +134,7 @@ export const STAGES = [
       [C | M]: at(0.25, [1, 2]), [M | Y]: at(0.50, [1, 2]), [C | Y]: at(0.70, [1, 2]),
     },
     motions: { drift: 3, leaf: 1 },
-    roles: { normal: 5, cluster: 2 },
+    roles: { normal: 5, cluster: 2, dive: 1 },
     bareChance: { base: 0.30 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
     spawn: { start: 1.05, min: 0.40, rampPerSec: 0.0030 },
@@ -150,7 +150,7 @@ export const STAGES = [
       [C | M]: at(0.15, [1, 2]), [M | Y]: at(0.35, [1, 2]), [C | Y]: at(0.55, [1, 2]),
     },
     motions: { drift: 3, leaf: 1, dodge: 1 },
-    roles: { normal: 5, cluster: 2, split: 1 },
+    roles: { normal: 5, cluster: 2, split: 1, carry: 2 },
     armoredChance: { base: 0.30, perSec: 0.0015 },
     bareChance: { base: 0.08 },
     spawn: { start: 0.70, min: 0.24, rampPerSec: 0.0038 },
@@ -276,7 +276,7 @@ export function validateStages() {
       }
     }
     for (const key of Object.keys(s.roles ?? {})) {
-      if (!['normal', 'split', 'cluster'].includes(key)) {
+      if (!['normal', 'split', 'cluster', 'dive', 'carry'].includes(key)) {
         problems.push(`${s.id}: 未知の役割 "${key}"`);
       }
     }

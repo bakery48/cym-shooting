@@ -31,6 +31,11 @@ export const CONFIG = {
     split:   { fragments: 2, radiusMul: 0.6, spreadPx: 26, fallMul: 1.15 },
     // 群れ: 同じ単色がまとまって湧く。照合は増えず、位置取りだけが問われる。
     cluster: { min: 3, max: 5, gapMul: 2.3 },
+    // 急降下: 遅く落ちてきて途中から加速する。「遅いうちに撃つか、後回しにするか」。
+    // 予備動作（warnSec）は必須 ― 無いと「見ていたのに落ちた」で理不尽になる。
+    dive:    { slowMul: 0.45, fastMul: 2.4, triggerY: 0.42, warnSec: 0.55 },
+    // 運び屋: 突破されると突破カウントが余分に進む。優先順位を問う。
+    carry:   { breachCost: 2, rewardMul: 2.5, radiusMul: 1.15, fallMul: 0.85 },
   },
 
   // 落ち方のバリエーション。形を統一したぶん、差は挙動で付ける。

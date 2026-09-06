@@ -3,18 +3,53 @@ import { view } from '../core/view.js';
 import { shipInk, turnStep } from '../core/state.js';
 
 /**
- * 敵の形はすべて同じ（六角形）。差は色と落ち方で付ける。
+ * 敵の形は**役割**を表す。色はインク、形は役割で、2つのチャネルが
+ * それぞれ1つずつ意味を持つ（形で弾種を区別することはしない）。
+ *
+ *   normal   六角形     ふつう
+ *   cluster  正方形     まとまって湧く。並ぶと壁に見える
+ *   split    ひょうたん  くびれが「2つに割れる」ことを示す
+ *   dive     下向きの楔  尖った先が進行方向。速さと向きが形から読める
+ *   carry    八角形     大きく重い。内側にもう一重の枠を描く
+ *
  * 自機は三角、ポッドは円、僚機は菱形なので、敵とは形で区別できる。
  */
-export function enemyPath(ctx, x, y, r, rot) {
+function polygon(ctx, x, y, r, rot, n) {
   ctx.beginPath();
-  for (let i = 0; i < 6; i++) {
-    const a = rot + i * Math.PI / 3;
+  for (let i = 0; i < n; i++) {
+    const a = rot + i * Math.PI * 2 / n;
     const px = x + Math.cos(a) * r;
     const py = y + Math.sin(a) * r;
     if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
   }
   ctx.closePath();
+}
+
+export function enemyPath(ctx, x, y, r, rot, role = 'normal') {
+  if (role === 'cluster') return polygon(ctx, x, y, r * 0.95, rot + Math.PI / 4, 4);
+  if (role === 'carry')   return polygon(ctx, x, y, r, rot, 8);
+
+  if (role === 'split') {
+    // 上下2つの丸をくびれでつなぐ。塗りは重なりを1つの形として埋める。
+    const rr = r * 0.66, off = r * 0.44;
+    ctx.beginPath();
+    ctx.arc(x, y - off, rr, 0, Math.PI * 2);
+    ctx.moveTo(x + rr, y + off);
+    ctx.arc(x, y + off, rr, 0, Math.PI * 2);
+    return;
+  }
+  if (role === 'dive') {
+    // 下に尖った楔。回転させないので、尖りは常に落下方向を指す。
+    ctx.beginPath();
+    ctx.moveTo(x, y + r * 1.35);
+    ctx.lineTo(x + r * 0.98, y - r * 0.62);
+    ctx.lineTo(x + r * 0.42, y - r * 0.95);
+    ctx.lineTo(x - r * 0.42, y - r * 0.95);
+    ctx.lineTo(x - r * 0.98, y - r * 0.62);
+    ctx.closePath();
+    return;
+  }
+  return polygon(ctx, x, y, r, rot, 6);
 }
 
 /* ------------------------------------------------------------
@@ -98,30 +133,14 @@ function drawInkGuide(ctx, r, inks) {
 }
 
 /**
- * 分裂する敵の目印。割れる線を縦に走らせる。
- * インクの案内は横一列なので、縦線なら重ならずに読める。
- */
-function drawSplitSeam(ctx, r) {
-  ctx.save();
-  ctx.strokeStyle = 'rgba(16,20,32,.7)';
-  ctx.lineWidth = 2.2;
-  ctx.setLineDash([r * 0.28, r * 0.2]);
-  ctx.beginPath();
-  ctx.moveTo(0, -r);
-  ctx.lineTo(0, r);
-  ctx.stroke();
-  ctx.restore();
-}
-
-/**
  * 敵1体ぶんの見た目を、任意のコンテキストに描く。
  * 凡例と盤面で同じ関数を使うことで、説明と実物がずれないようにする。
  */
-export function drawEnemyMark(ctx, x, y, r, inks, rot = 0) {
+export function drawEnemyMark(ctx, x, y, r, inks, rot = 0, role = 'normal') {
   ctx.save();
   ctx.translate(x, y);
   ctx.fillStyle = COLOR[inks];
-  enemyPath(ctx, 0, 0, r, rot);
+  enemyPath(ctx, 0, 0, r, rot, role);
   ctx.fill();
   const pat = inkPattern(ctx, inks);
   if (pat) { ctx.fillStyle = pat; ctx.fill(); }
@@ -130,7 +149,22 @@ export function drawEnemyMark(ctx, x, y, r, inks, rot = 0) {
     ctx.lineWidth = 2;
     ctx.stroke();
   }
+  if (role === 'carry') drawCargoRing(ctx, r, rot, inks);
   drawInkGuide(ctx, r, inks);
+  ctx.restore();
+}
+
+/**
+ * 運び屋の内枠。「積んでいる」ことを示す。
+ * 線の色は塗りの明るさで反転させる ― 暗い枠のままだと黒い運び屋で消えて、
+ * いちばん突破させたくない敵の目印が読めなくなる（模様と同じ理由）。
+ */
+function drawCargoRing(ctx, r, rot, inks) {
+  ctx.save();
+  ctx.strokeStyle = luminance(COLOR[inks]) > 0.45 ? 'rgba(16,20,32,.7)' : 'rgba(232,237,255,.8)';
+  ctx.lineWidth = 2.4;
+  enemyPath(ctx, 0, 0, r * 0.62, rot, 'carry');
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -213,7 +247,7 @@ function drawEnemies(ctx, G) {
     if (e.hit)     { ctx.shadowColor = '#ffffff';     ctx.shadowBlur = 18 * e.hit; }
 
     ctx.fillStyle = COLOR[e.inks];
-    enemyPath(ctx, 0, 0, e.r, e.rot);
+    enemyPath(ctx, 0, 0, e.r, e.rot, e.role);
     ctx.fill();
     ctx.shadowBlur = 0;
 
@@ -231,14 +265,30 @@ function drawEnemies(ctx, G) {
     if (e.armored) {   // 装甲はポッドの弾を弾く（インクとは別の軸）
       ctx.strokeStyle = PALETTE.armor;
       ctx.lineWidth = 2.5;
-      enemyPath(ctx, 0, 0, e.r * 1.42, e.rot);
+      enemyPath(ctx, 0, 0, e.r * 1.42, e.rot, e.role);
       ctx.stroke();
     }
-    if (e.role === 'split') drawSplitSeam(ctx, e.r);
+    if (e.role === 'carry') drawCargoRing(ctx, e.r, e.rot, e.inks);
+    if (e.dive === 'warn') drawDiveWarning(ctx, e);
     // 何が混ざっているかの案内は、回転させずに常に水平に並べる
     drawInkGuide(ctx, e.r, e.inks);
     ctx.restore();
   }
+}
+
+/**
+ * 急降下の予備動作。加速の前に必ず出す ―
+ * 予告なく速くなる敵は理不尽にしかならない。
+ */
+function drawDiveWarning(ctx, e) {
+  const k = Math.min(1, e.diveT / CONFIG.roles.dive.warnSec);
+  ctx.save();
+  ctx.globalAlpha = 0.9 * (1 - k);
+  ctx.strokeStyle = PALETTE.armor;
+  ctx.lineWidth = 2.5;
+  enemyPath(ctx, 0, 0, e.r * (1 + k * 0.9), e.rot, e.role);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawBullets(ctx, G) {
