@@ -145,8 +145,10 @@ function updateEnemies(G, dt) {
  *   leaf   木の葉のように左右に揺れながら、少し遅く落ちる
  *   dodge  遅い代わりに、下から来る弾を見て横に逃げる
  */
-function moveEnemy(G, e, dt, baseFall) {
+function moveEnemy(G, e, dt, base) {
   const m = CONFIG.motion;
+  // 覚えたての混色はゆっくり落ちる（生成時に決まった係数）
+  const baseFall = base * (e.fallMul ?? 1);
 
   if (e.motion === 'leaf') {
     e.phase += dt * m.leaf.swayHz * Math.PI * 2;

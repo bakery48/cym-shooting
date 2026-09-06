@@ -1,5 +1,5 @@
 import { CONFIG, BARE } from '../config.js';
-import { pickWeighted } from '../stages.js';
+import { pickWeighted, poolAt, fallMulFor } from '../stages.js';
 import { view } from '../core/view.js';
 
 export function spawnEnemy(G) {
@@ -9,7 +9,9 @@ export function spawnEnemy(G) {
   const ac = G.rules.armoredChance;
   const armored = !bare && Math.random() < ac.base + ac.perSec * G.t;
 
-  const inks = bare ? BARE : Number(pickWeighted(G.rules.pool));
+  // 混色は種類を時間で増やす。まだ登場していない構成は候補に入らない。
+  const progress = Math.min(1, G.t / G.rules.runSeconds);
+  const inks = bare ? BARE : Number(pickWeighted(poolAt(G.rules.pool, progress)));
   const motion = pickWeighted(G.rules.motions);
   const r = 18 * view.sc * (bare ? CONFIG.bareRadius : 1);
 
@@ -18,6 +20,8 @@ export function spawnEnemy(G) {
     // 報酬は「元々何色乗っていたか」で決まる。剥がしていくと inks は減るので、
     // 撃破時の残りから計算すると必ず取りこぼす。
     inks0: inks,
+    // 登場したばかりの混色はゆっくり落として解読の時間を作る（生成時に固定）
+    fallMul: fallMulFor(G.rules.pool, inks, progress),
     armored, motion,
     x: r * 2 + Math.random() * Math.max(1, view.W - r * 4),
     y: -r * 2,

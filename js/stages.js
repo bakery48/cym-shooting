@@ -1,5 +1,16 @@
 import { CONFIG, INK, INK_ORDER, INK_COUNT } from './config.js';
 
+/**
+ * 敵の出現比の書き方。
+ *
+ *   w    重み。数値、または [登場時, ラン終了時] で線形に変化させる
+ *   from ラン全体に対する登場時刻（0〜1）。既定は 0（最初から）
+ *
+ * 混色を最初から全種類降らせると頭が追いつかないので、種類は時間で増やす。
+ * 単色 → 混色1種 → 2種 → 3種 → 黒、の順に開いていく。
+ */
+const at = (from, w) => ({ from, w });
+
 const { C, M, Y } = INK;
 
 /**
@@ -26,7 +37,7 @@ export const STAGES = [
     id: '1-1', kind: 'stage', name: '1-1', title: '単色',
     desc: 'マゼンタだけ。まず動いて当てることに慣れる。砲塔はまだ回らない。',
     inks: MONO,
-    pool: { [M]: 1 },
+    pool: { [M]: at(0, 1) },
     motions: { drift: 1 },
     bareChance: { base: 0.22 },
     armoredChance: { base: 0.02, perSec: 0 },
@@ -36,7 +47,8 @@ export const STAGES = [
     id: '1-2', kind: 'stage', name: '1-2', title: '二色',
     desc: 'シアンが開く。青は C と M が重なった敵で、二色とも剥がさないと落ちない。',
     inks: DUO,
-    pool: { [M]: 3, [C]: 3, [C | M]: 2 },
+    // 混色は1種類しかないので、中盤から出す
+    pool: { [M]: at(0, 3), [C]: at(0, 3), [C | M]: at(0.30, [1, 3]) },
     motions: { drift: 3, leaf: 1 },
     bareChance: { base: 0.18 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
@@ -46,7 +58,14 @@ export const STAGES = [
     id: '1-3', kind: 'stage', name: '1-3', title: '三色',
     desc: 'イエローが開いて全色そろう。赤・緑・青は二色、黒は三色すべてを剥がす。',
     inks: TRIO,
-    pool: { [M]: 3, [C]: 3, [Y]: 3, [C | M]: 2, [C | Y]: 2, [M | Y]: 2, [C | M | Y]: 1 },
+    // 序盤は混色1種、中盤2種、終盤3種、最終盤に黒
+    pool: {
+      [M]: at(0, 3), [C]: at(0, 3), [Y]: at(0, 3),
+      [C | M]: at(0.15, [1, 3]),
+      [M | Y]: at(0.40, [1, 3]),
+      [C | Y]: at(0.62, [1, 3]),
+      [C | M | Y]: at(0.82, [0.4, 2]),
+    },
     motions: { drift: 3, leaf: 1 },
     shop: ALL,
   },
@@ -54,7 +73,13 @@ export const STAGES = [
     id: '2-1', kind: 'stage', name: '2-1', title: '回避',
     desc: 'ゆっくり横に逃げる敵が混じる。狙って撃つ手が要る。',
     inks: TRIO,
-    pool: { [M]: 2, [C]: 2, [Y]: 2, [C | M]: 2, [C | Y]: 2, [M | Y]: 2, [C | M | Y]: 1 },
+    pool: {
+      [M]: at(0, 2), [C]: at(0, 2), [Y]: at(0, 2),
+      [C | M]: at(0.10, [1, 3]),
+      [M | Y]: at(0.32, [1, 3]),
+      [C | Y]: at(0.54, [1, 3]),
+      [C | M | Y]: at(0.72, [0.5, 3]),
+    },
     motions: { drift: 3, leaf: 2, dodge: 2 },
     spawn: { start: 0.85, min: 0.26, rampPerSec: 0.0042 },
     shop: ALL,
@@ -63,7 +88,12 @@ export const STAGES = [
     id: '2-2', kind: 'stage', name: '2-2', title: '黒',
     desc: '三色すべてを乗せた黒が多い。1体に3発、砲塔を2回まわす必要がある。',
     inks: TRIO,
-    pool: { [M]: 1, [C]: 1, [Y]: 1, [C | M]: 2, [C | Y]: 2, [M | Y]: 2, [C | M | Y]: 6 },
+    // 黒が主役の面。それでも最初から黒だらけにはせず、段階を踏む
+    pool: {
+      [M]: at(0, 2), [C]: at(0, 2), [Y]: at(0, 2),
+      [C | M]: at(0.08, [2, 2]), [M | Y]: at(0.20, [2, 2]), [C | Y]: at(0.32, [2, 2]),
+      [C | M | Y]: at(0.40, [1, 9]),
+    },
     motions: { drift: 3, leaf: 1, dodge: 1 },
     spawn: { start: 1.05, min: 0.38, rampPerSec: 0.0030 },
     bareChance: { base: 0.10 },
@@ -74,7 +104,13 @@ export const STAGES = [
     desc: '5分。終盤はポッドだけでは追いつかず、手が通常の敵にも戻ってくる。',
     inks: TRIO,
     runSeconds: 300, maxBreach: 12,
-    pool: { [M]: 3, [C]: 3, [Y]: 3, [C | M]: 2, [C | Y]: 2, [M | Y]: 2, [C | M | Y]: 2 },
+    pool: {
+      [M]: at(0, 3), [C]: at(0, 3), [Y]: at(0, 3),
+      [C | M]: at(0.12, [1, 3]),
+      [M | Y]: at(0.30, [1, 3]),
+      [C | Y]: at(0.48, [1, 3]),
+      [C | M | Y]: at(0.66, [0.4, 3]),
+    },
     motions: { drift: 3, leaf: 2, dodge: 1 },
     spawn: { start: 0.90, min: 0.22, rampPerSec: 0.0032 },
     fall: { start: 50, rampPerSec: 0.52 },
@@ -88,7 +124,10 @@ export const STAGES = [
     desc: 'ポッドを買えない。混色をすべて手で剥がし続ける。',
     unlockAfter: '1-3',
     inks: TRIO,
-    pool: { [M]: 3, [C]: 3, [Y]: 3, [C | M]: 1, [C | Y]: 1, [M | Y]: 1 },
+    pool: {
+      [M]: at(0, 3), [C]: at(0, 3), [Y]: at(0, 3),
+      [C | M]: at(0.25, [1, 2]), [M | Y]: at(0.50, [1, 2]), [C | Y]: at(0.70, [1, 2]),
+    },
     motions: { drift: 3, leaf: 1 },
     bareChance: { base: 0.30 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
@@ -100,7 +139,10 @@ export const STAGES = [
     desc: '3色のポッドを最初から持つ。そのぶん装甲付きしか金にならない。',
     unlockAfter: '1-3',
     inks: TRIO,
-    pool: { [M]: 3, [C]: 3, [Y]: 3, [C | M]: 2, [C | Y]: 2, [M | Y]: 2 },
+    pool: {
+      [M]: at(0, 3), [C]: at(0, 3), [Y]: at(0, 3),
+      [C | M]: at(0.15, [1, 2]), [M | Y]: at(0.35, [1, 2]), [C | Y]: at(0.55, [1, 2]),
+    },
     motions: { drift: 3, leaf: 1, dodge: 1 },
     armoredChance: { base: 0.30, perSec: 0.0015 },
     bareChance: { base: 0.08 },
@@ -148,6 +190,36 @@ export function isUnlocked(stage, cleared) {
   return !!cleared[stages[i - 1].id];
 }
 
+/**
+ * その時点で出現しうるインク構成と重み。
+ * `from` 未満の組み合わせはまだ降ってこない。重みが [a, b] なら
+ * 登場時 a からラン終了時 b へ線形に増える（「たまに → 普通」を表す）。
+ */
+export function poolAt(pool, progress) {
+  const out = {};
+  for (const key in pool) {
+    const { from = 0, w } = pool[key];
+    if (progress < from) continue;
+    if (typeof w === 'number') { out[key] = w; continue; }
+    const k = from >= 1 ? 1 : (progress - from) / (1 - from);
+    out[key] = w[0] + (w[1] - w[0]) * Math.min(1, Math.max(0, k));
+  }
+  return out;
+}
+
+/**
+ * その構成が「登場したばかり」なら落下を遅くする係数。
+ * 解読の時間が要るのは覚えたての混色だけなので、慣れる頃には単色と同じ速さに戻す。
+ * 単色と素地は常に等速。
+ */
+export function fallMulFor(pool, inks, progress) {
+  if (INK_COUNT[inks] < 2) return 1;
+  const from = pool[inks]?.from ?? 0;
+  const k = from >= 1 ? 1 : (progress - from) / (1 - from);   // 登場からの経過（0〜1）
+  const t = Math.min(1, Math.max(0, k));
+  return CONFIG.mixed.slowStart + (1 - CONFIG.mixed.slowStart) * t;
+}
+
 /** 重み付きで1つ選ぶ。キーは数値でも文字列でもよい。 */
 export function pickWeighted(weights) {
   let total = 0;
@@ -174,13 +246,21 @@ export function validateStages() {
     if (s.inks.join(',') !== expected.join(',')) {
       problems.push(`${s.id}: inks が INK_ORDER の先頭からの部分列でない`);
     }
+    let hasStart = false;
     for (const key of Object.keys(s.pool)) {
       const inks = Number(key);
+      const { from = 0, w } = s.pool[key];
       if (inks === 0) { problems.push(`${s.id}: pool に素地(0)は置かない`); continue; }
       if (inks & ~available) {
         problems.push(`${s.id}: 撃てないインクを含む敵 (${inks}) が出る`);
       }
+      if (from < 0 || from >= 1) problems.push(`${s.id}: from は 0以上1未満 (${key}: ${from})`);
+      if (from === 0) hasStart = true;
+      const ws = typeof w === 'number' ? [w] : w;
+      if (!ws?.length || ws.some((v) => !(v > 0))) problems.push(`${s.id}: 重みが不正 (${key})`);
     }
+    // ラン開始時点で何も降ってこない面は成立しない
+    if (!hasStart) problems.push(`${s.id}: 開始時（from:0）に出る敵がいない`);
     for (const key of Object.keys(s.motions)) {
       if (!['drift', 'leaf', 'dodge'].includes(key)) {
         problems.push(`${s.id}: 未知の落ち方 "${key}"`);
@@ -204,3 +284,7 @@ export function validateStages() {
 /** その面で最も手数のかかる敵が何発必要か（表示と検査に使う）。 */
 export const maxInkCount = (stage) =>
   Math.max(...Object.keys(stage.pool).map((k) => INK_COUNT[Number(k)]));
+
+/** 混色が何種類そろうか（面選択の表示に使う）。 */
+export const mixedKinds = (stage) =>
+  Object.keys(stage.pool).filter((k) => INK_COUNT[Number(k)] >= 2).length;

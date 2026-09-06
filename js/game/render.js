@@ -1,4 +1,4 @@
-import { CONFIG, COLOR, PALETTE, INK, BARE, INK_COUNT } from '../config.js';
+import { CONFIG, COLOR, PALETTE, INK, BARE, INK_COUNT, INK_ORDER } from '../config.js';
 import { view } from '../core/view.js';
 import { shipInk, turnStep } from '../core/state.js';
 
@@ -71,6 +71,33 @@ function inkPattern(ctx, inks) {
 }
 
 /**
+ * 何が混ざっているかを、混ざる前の色の点で示す。
+ *
+ * 色と模様だけだと「赤 = マゼンタ＋イエロー」を頭の中で分解する必要があり、
+ * 複数体が同時に降ると追いつかない。素の色を並べて見せれば分解が要らなくなる。
+ * 単色と素地には出さない ― 分解するものが無く、点は邪魔にしかならない。
+ */
+function drawInkGuide(ctx, r, inks) {
+  if (INK_COUNT[inks] < 2) return;
+  const g = CONFIG.mixed.guide;
+  const present = INK_ORDER.filter((ink) => inks & ink);
+  const dot = r * g.radius;
+  const step = dot * 2 + r * g.gap * 0.5;
+  const x0 = -step * (present.length - 1) / 2;
+
+  present.forEach((ink, i) => {
+    ctx.beginPath();
+    ctx.arc(x0 + i * step, 0, dot, 0, Math.PI * 2);
+    ctx.fillStyle = COLOR[ink];
+    ctx.fill();
+    // どんな塗りの上でも点が浮くように、暗い縁で囲う
+    ctx.lineWidth = g.ring;
+    ctx.strokeStyle = 'rgba(16,20,32,.85)';
+    ctx.stroke();
+  });
+}
+
+/**
  * 敵1体ぶんの見た目を、任意のコンテキストに描く。
  * 凡例と盤面で同じ関数を使うことで、説明と実物がずれないようにする。
  */
@@ -87,6 +114,7 @@ export function drawEnemyMark(ctx, x, y, r, inks, rot = 0) {
     ctx.lineWidth = 2;
     ctx.stroke();
   }
+  drawInkGuide(ctx, r, inks);
   ctx.restore();
 }
 
@@ -190,6 +218,8 @@ function drawEnemies(ctx, G) {
       enemyPath(ctx, 0, 0, e.r * 1.42, e.rot);
       ctx.stroke();
     }
+    // 何が混ざっているかの案内は、回転させずに常に水平に並べる
+    drawInkGuide(ctx, e.r, e.inks);
     ctx.restore();
   }
 }
