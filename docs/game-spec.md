@@ -233,7 +233,7 @@ const CONFIG = {
   armoredChance: { base: 0.05, perSec: 0.0004 },
   spawn: { start: 1.00, min: 0.30, rampPerSec: 0.0038 },
   fall:  { start: 46,   rampPerSec: 0.55 },
-  ship:  { fireBase: 0.30, fireMin: 0.10, firePerLv: 0.035, bulletSpeed: 560 },
+  ship:  { fireBase: 0.60, fireMin: 0.20, firePerLv: 0.07, bulletSpeed: 560 },
   pod:   { orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.9, bulletSpeed: 460, range: 520 },
   tapThreshold: 10,
   costs: {

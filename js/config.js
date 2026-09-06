@@ -23,7 +23,10 @@ export const CONFIG = {
   },
 
   ship: {
-    fireBase: 0.30, fireMin: 0.10, firePerLv: 0.035,
+    // 発射間隔（秒）。連射は控えめにして、1発ずつ狙う感じを出す。
+    // 3つの値は比を保って動かすこと ― base だけ変えると連射速度の強化が
+    // 相対的に効かなくなる（現状は max まで買うと 2.4 倍速で、比は元のまま）。
+    fireBase: 0.60, fireMin: 0.20, firePerLv: 0.07,
     bulletSpeed: 560,
     keyboardSpeed: 420,   // px/秒（縦640px基準）: キー移動の速度
     edgeMargin: 24,
