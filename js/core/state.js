@@ -35,8 +35,18 @@ export function newGame(stage, meta) {
   return G;
 }
 
+/** ポッドと僚機の発射間隔の土台。ラン内の連射速度だけが効く。 */
 export const fireInterval = (G) =>
   Math.max(CONFIG.ship.fireMin, CONFIG.ship.fireBase - G.up.rate * CONFIG.ship.firePerLv);
+
+/**
+ * 自機の発射間隔。恒久の「速射」はここにしか乗らない。
+ * ポッドまで速くすると、恒久強化が自動化そのものを底上げしてしまい、
+ * 「毎ラン全手動から始める」弧が薄くなる（企画書 §5 の原則）。
+ * fireMin はラン内強化の下限なので、恒久ぶんはその**後ろ**に掛ける。
+ */
+export const shipFireInterval = (G) =>
+  fireInterval(G) * Math.pow(CONFIG.meta.fire.mul, G.meta.fire ?? 0);
 
 /** 自機が今撃っているインク。 */
 export const shipInk = (G) => G.rules.inks[G.ship.idx];

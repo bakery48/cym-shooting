@@ -1,6 +1,6 @@
 import { CONFIG, COLOR, PALETTE, BARE, INK_COUNT } from '../config.js';
 import { view } from '../core/view.js';
-import { fireInterval, shipInk } from '../core/state.js';
+import { fireInterval, shipFireInterval, shipInk } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 import { spawnEnemy, spawnFragments, spawnOffspring, shoot, burst } from './entities.js';
 
@@ -30,7 +30,7 @@ function updateShip(G, dt, input) {
   sh.cd -= dt;
   if (sh.cd <= 0) {
     shoot(G, sh.x, sh.y - 16 * view.S, shipInk(G), 'ship', 0);
-    sh.cd = fireInterval(G);
+    sh.cd = shipFireInterval(G);
   }
 }
 

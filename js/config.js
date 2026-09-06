@@ -100,6 +100,9 @@ export const CONFIG = {
     coreFail: 1,         // 失敗しても最低限は得られる
     wing:   { offsetX: 40, offsetY: 16, fireMul: 2.4, bulletSpeed: 460, range: 460 },
     bullet: { radiusPerLv: 0.35 },   // 弾芯1段ごとの自機弾の半径増加率
+    // 速射1段ごとの自機の発射間隔の倍率。**自機にしか乗らない** ―
+    // ポッドまで速くすると、恒久強化が自動化そのものを底上げしてしまう。
+    fire:   { mul: 0.87 },
   },
 
   tapThreshold: 10,       // これ未満の移動なら「タップ＝砲塔回転」
