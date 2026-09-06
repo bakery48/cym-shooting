@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { view } from './view.js';
 import { rotateTurret } from './state.js';
+import { SHOP_KEYS } from '../game/shop.js';
 
 /**
  * 入力は「移動」と「回転」の2つだけに正規化する。
@@ -85,7 +86,7 @@ export function createInput({ canvas, getGame, onPause, onShopHotkey, onToggleMu
     if (FORCE_CLEAR.has(e.code)) { e.preventDefault(); onForceEnd(true); return; }
     if (FORCE_FAIL.has(e.code)) { e.preventDefault(); onForceEnd(false); return; }
 
-    const shopIndex = '123456'.indexOf(e.key);
+    const shopIndex = SHOP_KEYS.indexOf(e.key);
     if (shopIndex >= 0) { e.preventDefault(); onShopHotkey(shopIndex); return; }
 
     if (ROTATE.has(e.code)) {

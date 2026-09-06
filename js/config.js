@@ -17,7 +17,7 @@ export const CONFIG = {
   // 進行度の curve 乗で増やす（curve > 1 で後半ほど伸びる）。
   // 間隔（秒）で補間すると毎秒の数が終盤だけ跳ね上がる形になるので、
   // 「だんだん濃くなる」を素直に書けるほうを取っている。
-  spawn: { rate0: 0.55, rate1: 7.0, curve: 2.0 },
+  spawn: { rate0: 0.55, rate1: 6.0, curve: 2.0 },
   fall:  { start: 46,   rampPerSec: 0.55 },   // px/秒（縦640px基準）
 
   // 混色の導入。頭が追いつかないのを防ぐため、種類は時間で少しずつ増やす。
@@ -60,7 +60,7 @@ export const CONFIG = {
   pod: {
     // 的の有無にかかわらず撃ち続けるので、間隔は自機より遅くしておく。
     // range は僚機（狙って撃つ）の射程としてだけ使う。
-    orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.4, bulletSpeed: 460, range: 520,
+    orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.15, bulletSpeed: 460, range: 520,
     // 公転の航跡。買ったポッドが「回る帯」として見えるようにするためのもの。
     // 帯の長さは interval × samples × orbitSpeed（ラジアン）で決まる。
     // 既定は約2.4秒 = 公転の約120度で、3基そろうとほぼ輪になる。
@@ -93,10 +93,8 @@ export const CONFIG = {
     pod: { C: 210, M: 140, Y: 300 },
     // ポッドは色ごとに増設できる。2基目以降はこの倍率で高くなる。
     // 上限を作らないのは、終盤に金の使い道が尽きると手数が伸びなくなるため。
-    podMul: 2.2,
+    podMul: 1.9,
     rate:   { base: 130, mul: 1.65, max: 5 },
-    pierce: { base: 220, mul: 2.0,  max: 3 },
-    spread: { base: 280, mul: 2.1,  max: 3 },
   },
 };
 

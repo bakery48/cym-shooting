@@ -302,8 +302,7 @@ function resolveBulletHit(G, b, i) {
       sfx.peel(e.inks);                       // 剥がれて色が変わった
     }
 
-    if (b.pierce > 0 && b.from === 'ship') b.pierce--;
-    else G.bullets.splice(i, 1);
+    G.bullets.splice(i, 1);
     return;
   }
 }

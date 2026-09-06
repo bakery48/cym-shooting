@@ -28,11 +28,10 @@ export const SHOP = [
 
   { id: 'rate', name: '連射速度', lv: (G) => G.up.rate, max: CONFIG.costs.rate.max,
     cost: (G) => scaled(CONFIG.costs.rate, G.up.rate), buy: (G) => G.up.rate++ },
-  { id: 'pierce', name: '貫通弾', lv: (G) => G.up.pierce, max: CONFIG.costs.pierce.max,
-    cost: (G) => scaled(CONFIG.costs.pierce, G.up.pierce), buy: (G) => G.up.pierce++ },
-  { id: 'spread', name: '拡散弾', lv: (G) => G.up.spread, max: CONFIG.costs.spread.max,
-    cost: (G) => scaled(CONFIG.costs.spread, G.up.spread), buy: (G) => G.up.spread++ },
 ];
+
+/** ショップの並び順に対応するキー。面ごとに並ぶ数は違うが、上限はこの本数。 */
+export const SHOP_KEYS = SHOP.map((_, i) => String(i + 1)).join('');
 
 const scaled = (c, lv) => Math.round(c.base * Math.pow(c.mul, lv));
 const isDone = (u, G) => (u.owned ? u.owned(G) : u.lv(G) >= u.max);

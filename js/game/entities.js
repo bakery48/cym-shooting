@@ -112,10 +112,11 @@ export function spawnFragments(G, from) {
 
 /**
  * 弾を発射する。angle は上方向を0とした射角（ラジアン）。
- * 自機のみ拡散・貫通・弾芯が乗る。
+ * 自機のみ拡散と弾芯が乗る（どちらも恒久強化）。
  */
 export function shoot(G, x, y, ink, from, angle) {
-  const n = 1 + (from === 'ship' ? G.up.spread : 0);
+  // 拡散は恒久強化（コア）。ポッドと僚機には乗らない。
+  const n = 1 + (from === 'ship' ? G.meta.spread : 0);
   const speed = (from === 'ship' ? CONFIG.ship.bulletSpeed : CONFIG.pod.bulletSpeed) * view.S;
   const grow = from === 'ship' ? 1 + G.meta.core * CONFIG.meta.bullet.radiusPerLv : 1;
 
@@ -128,7 +129,6 @@ export function shoot(G, x, y, ink, from, angle) {
       vy: -Math.cos(a) * speed,
       ink, from,
       r: 4.5 * view.sc * grow,
-      pierce: from === 'ship' ? G.up.pierce : 0,
     });
   }
 }

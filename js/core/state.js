@@ -1,4 +1,5 @@
 import { CONFIG, INK, INK_ID } from '../config.js';
+import { EMPTY_META_UP } from '../meta.js';
 import { resolveRules } from '../stages.js';
 import { view } from './view.js';
 import { sfx } from './audio.js';
@@ -13,7 +14,8 @@ export function newGame(stage, meta) {
   const G = {
     stage, rules,
     // 恒久強化はランをまたいで残る唯一の強さ。ラン中は変化しない。
-    meta: { ...meta.up },
+    // 既定を敷いてから重ねる ― 項目を足した直後の古い保存で undefined を掴まない。
+    meta: { ...EMPTY_META_UP, ...meta.up },
     shield: meta.up.shield,
     wings: [],
     running: false, over: false, paused: false, cleared: false,
@@ -24,7 +26,7 @@ export function newGame(stage, meta) {
     nextSpawn: 0.6, shake: 0, flash: 0, shieldFlash: 0,
     // ラン内強化は毎回ゼロから。ここが企画書 §2 の弧を毎ラン成立させている。
     // ポッドは色ごとの「基数」。1基目で自動化が始まり、以降は増設で密度が上がる。
-    up: { podC: 0, podM: 0, podY: 0, rate: 0, pierce: 0, spread: 0, ...rules.startUp },
+    up: { podC: 0, podM: 0, podY: 0, rate: 0, ...rules.startUp },
     st: { ship: 0, pod: 0, armored: 0, breach: 0, earned: 0 },
     endReason: '',
   };

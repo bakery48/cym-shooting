@@ -25,8 +25,8 @@ const { C, M, Y } = INK;
  *
  * `motions` は落ち方の出現比。形を統一したぶん、差はここで付ける。
  */
-const ALL = ['podC', 'podM', 'podY', 'rate', 'pierce', 'spread'];
-const HAND_ONLY = ['rate', 'pierce', 'spread'];
+const ALL = ['podC', 'podM', 'podY', 'rate'];
+const HAND_ONLY = ['rate'];
 
 const MONO = [M];
 const DUO  = [M, C];
@@ -87,7 +87,7 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 2, dodge: 2 },
     roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1 },
-    spawn: { rate0: 0.60, rate1: 6.8, curve: 2.0 },
+    spawn: { rate0: 0.60, rate1: 6.4, curve: 2.0 },
     shop: ALL,
   },
   {
@@ -121,7 +121,7 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 2, dodge: 1 },
     roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 2 },
-    spawn: { rate0: 0.60, rate1: 7.0, curve: 2.1 },
+    spawn: { rate0: 0.60, rate1: 5.5, curve: 2.1 },
     fall: { start: 50, rampPerSec: 0.52 },
     armoredChance: { base: 0.08, perSec: 0.0006 },
     shop: ALL,
@@ -141,7 +141,7 @@ export const STAGES = [
     roles: { normal: 5, cluster: 2, dive: 1 },
     bareChance: { base: 0.30 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
-    // ポッドを買えない＝out は連射・貫通・拡散のぶんしか伸びない。
+    // ポッドを買えない＝ラン中に伸びるのは連射だけ。
     // in の伸びもそれに合わせて抑える（ここだけ密度カーブが浅い）
     spawn: { rate0: 0.50, rate1: 2.1, curve: 1.8 },
     shop: HAND_ONLY,
@@ -159,7 +159,7 @@ export const STAGES = [
     roles: { normal: 5, cluster: 2, split: 1, carry: 2 },
     armoredChance: { base: 0.30, perSec: 0.0015 },
     bareChance: { base: 0.08 },
-    spawn: { rate0: 0.80, rate1: 6.0, curve: 1.8 },
+    spawn: { rate0: 0.70, rate1: 3.6, curve: 1.8 },
     startUp: { podC: 1, podM: 1, podY: 1 },
     // 増設は買える。自動化を伸ばす面なので、金の行き先もそこに置く
     shop: ALL,
