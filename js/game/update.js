@@ -153,9 +153,10 @@ function updateEnemies(G, dt) {
  */
 function breedTick(G, e, dt) {
   const b = CONFIG.roles.breed;
+  // 増える上限は maxGen だけ（1体につき最大8体）。
+  // 「画面が混んできたら分裂を止める」は入れない ― 溺れている時にだけ
+  // 静かに楽になるうえ、満ちた弧が何も起こさないので表示が嘘になる。
   if (e.role !== 'breed' || e.breedGen >= b.maxGen) return;
-  // 画面が溢れたら止める（保険。ここに掛かる時点で既に手遅れではある）
-  if (G.enemies.length >= b.cap) return;
 
   e.breedT -= dt;
   if (e.breedT > 0) return;

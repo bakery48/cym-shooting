@@ -49,7 +49,7 @@ export const CONFIG = {
     // 世代ごとに報酬は半分。増やして稼ぐ／早く潰すのどちらでも総額は同じで、
     // 「稼ぐために泳がせる」が最適解にならないようにしてある。
     breed:   { fallMul: 0.45, interval: 3.4, maxGen: 3, radiusMul: 0.86,
-               gapPx: 34, value: 2, cap: 26 },
+               gapPx: 34, value: 2 },
   },
 
   // 落ち方のバリエーション。形を統一したぶん、差は挙動で付ける。
