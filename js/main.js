@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG, INK } from './config.js';
 import { STAGES, stageById, isUnlocked } from './stages.js';
 import { view, attachView, resizeView } from './core/view.js';
 import { newGame } from './core/state.js';
@@ -58,8 +58,8 @@ elVol.value = String(Math.round(progress.settings.volume * 100));
 elMute.checked = progress.settings.muted;
 applyAudioSettings({ persist: false });
 elVol.addEventListener('input', () => applyAudioSettings());
-elVol.addEventListener('change', () => sfx.kill('circle'));
-elMute.addEventListener('change', () => { applyAudioSettings(); if (!audio.muted) sfx.kill('circle'); });
+elVol.addEventListener('change', () => sfx.kill(INK.M));   // 音量確認用の試聴
+elMute.addEventListener('change', () => { applyAudioSettings(); if (!audio.muted) sfx.kill(INK.M); });
 
 const hud = createHud();
 const shop = createShop($('shop'), getGame);

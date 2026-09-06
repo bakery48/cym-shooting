@@ -1,29 +1,93 @@
-import { CONFIG, COLOR, MARK, PALETTE, TYPES, TURN_STEP, ANY } from '../config.js';
+import { CONFIG, COLOR, PALETTE, INK, BARE, INK_COUNT } from '../config.js';
 import { view } from '../core/view.js';
+import { shipInk, turnStep } from '../core/state.js';
 
-export function shapePath(ctx, type, x, y, r, rot) {
+/**
+ * 敵の形はすべて同じ（六角形）。差は色と落ち方で付ける。
+ * 自機は三角、ポッドは円、僚機は菱形なので、敵とは形で区別できる。
+ */
+export function enemyPath(ctx, x, y, r, rot) {
   ctx.beginPath();
-  if (type === 'circle') { ctx.arc(x, y, r, 0, Math.PI * 2); return; }
-  if (type === ANY) {
-    // 菱形。●▲■ のどれとも違う形にして、白い ● と見間違えないようにする。
-    const d = r * 1.15;
-    ctx.moveTo(x, y - d); ctx.lineTo(x + d, y);
-    ctx.lineTo(x, y + d); ctx.lineTo(x - d, y);
-    ctx.closePath();
-    return;
+  for (let i = 0; i < 6; i++) {
+    const a = rot + i * Math.PI / 3;
+    const px = x + Math.cos(a) * r;
+    const py = y + Math.sin(a) * r;
+    if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
   }
-  if (type === 'tri') {
-    for (let i = 0; i < 3; i++) {
-      const a = -Math.PI / 2 + i * TURN_STEP + rot * 0.15;
-      const px = x + Math.cos(a) * r * 1.16;
-      const py = y + Math.sin(a) * r * 1.16;
-      if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+  ctx.closePath();
+}
+
+/* ------------------------------------------------------------
+   インクの模様
+   ------------------------------------------------------------
+   形を統一すると色だけが情報になり、色覚特性のあるプレイヤーが遊べなくなる
+   （赤と緑の区別は最も頻度が高い）。塗りに模様を重ねて冗長なチャネルを戻す。
+
+     C 横線 / M 縦線 / Y 点
+
+   混色は模様が重なるので、「何色が乗っているか」が模様からも読める。
+   組み合わせは8通りしかないので、タイルは起動時に1度だけ作って使い回す。
+------------------------------------------------------------ */
+const TILE = 14;
+const patterns = new Map();
+
+/** 相対輝度（sRGB）。模様の色を塗りの明るさで切り替えるために使う。 */
+function luminance(hex) {
+  const v = (i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * v(1) + 0.7152 * v(3) + 0.0722 * v(5);
+}
+
+function inkPattern(ctx, inks) {
+  if (patterns.has(inks)) return patterns.get(inks);
+
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  const p = c.getContext('2d');
+  // 明るい塗りの上では白い模様が消えるので、塗りの明るさで模様の色を反転させる。
+  // 模様は色覚特性への冗長チャネルなので、8通りすべてで読めないと意味がない。
+  const stroke = luminance(COLOR[inks]) > 0.45 ? 'rgba(20,24,38,.38)' : 'rgba(255,255,255,.38)';
+  p.strokeStyle = stroke;
+  p.fillStyle = stroke;
+  p.lineWidth = 2;
+
+  if (inks & INK.C) {                       // 横線
+    for (const y of [3.5, 10.5]) { p.beginPath(); p.moveTo(0, y); p.lineTo(TILE, y); p.stroke(); }
+  }
+  if (inks & INK.M) {                       // 縦線
+    for (const x of [3.5, 10.5]) { p.beginPath(); p.moveTo(x, 0); p.lineTo(x, TILE); p.stroke(); }
+  }
+  if (inks & INK.Y) {                       // 点
+    for (const [x, y] of [[3.5, 3.5], [10.5, 10.5]]) {
+      p.beginPath(); p.arc(x, y, 1.9, 0, Math.PI * 2); p.fill();
     }
-    ctx.closePath();
-    return;
   }
-  const s = r * 0.88;
-  ctx.roundRect(x - s, y - s, s * 2, s * 2, r * 0.28);
+
+  const pat = inks === BARE ? null : ctx.createPattern(c, 'repeat');
+  patterns.set(inks, pat);
+  return pat;
+}
+
+/**
+ * 敵1体ぶんの見た目を、任意のコンテキストに描く。
+ * 凡例と盤面で同じ関数を使うことで、説明と実物がずれないようにする。
+ */
+export function drawEnemyMark(ctx, x, y, r, inks, rot = 0) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = COLOR[inks];
+  enemyPath(ctx, 0, 0, r, rot);
+  ctx.fill();
+  const pat = inkPattern(ctx, inks);
+  if (pat) { ctx.fillStyle = pat; ctx.fill(); }
+  if (INK_COUNT[inks] === 3) {
+    ctx.strokeStyle = PALETTE.rim;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 export function draw(G) {
@@ -96,48 +160,35 @@ function drawShield(ctx, G, W, LINE) {
   ctx.globalAlpha = 1;
 }
 
-/** 僚機。ポッドと違って公転せず自機の脇に固定で並ぶ ― 別物だと見て分かるように。 */
-function drawWings(ctx, G) {
-  for (const w of G.wings) {
-    ctx.save();
-    ctx.shadowColor = COLOR[ANY];
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = COLOR[ANY];
-    const r = 5.5 * view.sc;
-    ctx.beginPath();
-    ctx.moveTo(w.x, w.y - r * 1.5);
-    ctx.lineTo(w.x + r, w.y);
-    ctx.lineTo(w.x, w.y + r * 1.5);
-    ctx.lineTo(w.x - r, w.y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
 function drawEnemies(ctx, G) {
   for (const e of G.enemies) {
     ctx.save();
+    ctx.translate(e.x, e.y);          // 模様を敵に貼り付けるため原点を移す
+
     if (e.armored) { ctx.shadowColor = PALETTE.armor; ctx.shadowBlur = 14; }
     if (e.hit)     { ctx.shadowColor = '#ffffff';     ctx.shadowBlur = 18 * e.hit; }
 
-    // 白い敵はグローも枠も持たない。装甲敵（色つきの塗り＋白い枠）と読み違えないよう、
-    // 見た目の情報量そのものを落としておく。
-    ctx.fillStyle = COLOR[e.type];
-    ctx.globalAlpha = e.type === ANY ? 0.82 : 1;
-    shapePath(ctx, e.type, e.x, e.y, e.r, e.rot);
+    ctx.fillStyle = COLOR[e.inks];
+    enemyPath(ctx, 0, 0, e.r, e.rot);
     ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
 
-    if (e.armored) {
+    // 乗っているインクを模様でも示す（色だけに頼らせない）
+    const pat = inkPattern(ctx, e.inks);
+    if (pat) { ctx.fillStyle = pat; ctx.fill(); }
+
+    // 黒は背景に沈むので縁で浮かせる
+    if (INK_COUNT[e.inks] === 3) {
+      ctx.strokeStyle = PALETTE.rim;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    if (e.armored) {   // 装甲はポッドの弾を弾く（インクとは別の軸）
       ctx.strokeStyle = PALETTE.armor;
       ctx.lineWidth = 2.5;
-      shapePath(ctx, e.type, e.x, e.y, e.r * 1.45, e.rot);
+      enemyPath(ctx, 0, 0, e.r * 1.42, e.rot);
       ctx.stroke();
-      ctx.fillStyle = PALETTE.armor;
-      ctx.font = '600 10px system-ui,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(e.hp, e.x, e.y + 3.5);
     }
     ctx.restore();
   }
@@ -145,7 +196,7 @@ function drawEnemies(ctx, G) {
 
 function drawBullets(ctx, G) {
   for (const b of G.bullets) {
-    ctx.fillStyle = COLOR[b.type];
+    ctx.fillStyle = COLOR[b.ink];
     ctx.globalAlpha = b.from === 'pod' ? 0.85 : 1;
     ctx.beginPath();
     ctx.ellipse(b.x, b.y, b.r * 0.7, b.r * 1.6, Math.atan2(b.vy, b.vx) - Math.PI / 2, 0, Math.PI * 2);
@@ -158,7 +209,7 @@ function drawBullets(ctx, G) {
  * 公転の航跡。買うほど自機の周りが賑やかになる（企画書 §4）ことを、
  * 点ではなく「回る帯」として見せるための描画。
  *
- * 加算合成は使わない ― 3色が重なって白くなると、白は「弾種を持たない」の
+ * 加算合成は使わない ― 色が重なって白くなると、白は「インクを持たない」の
  * 意味を持っているので嘘の情報になる（企画書 §7）。
  */
 function drawPodTrails(ctx, G) {
@@ -171,7 +222,7 @@ function drawPodTrails(ctx, G) {
     const t = p.trail;                       // 自機からの相対座標で持っている
     if (t.length < 4) continue;
     const n = t.length / 2;
-    ctx.strokeStyle = COLOR[p.type];
+    ctx.strokeStyle = COLOR[p.ink];
 
     for (let i = 1; i < n; i++) {
       const k = i / n;                       // 新しい点ほど 1 に近い
@@ -182,7 +233,6 @@ function drawPodTrails(ctx, G) {
       ctx.lineTo(sh.x + t[i * 2], sh.y + t[i * 2 + 1]);
       ctx.stroke();
     }
-    // 帯の先端をポッド本体につなぐ
     ctx.globalAlpha = alpha;
     ctx.lineWidth = width * view.sc;
     ctx.beginPath();
@@ -196,11 +246,30 @@ function drawPodTrails(ctx, G) {
 function drawPods(ctx, G) {
   for (const p of G.pods) {
     ctx.save();
-    ctx.shadowColor = COLOR[p.type];
+    ctx.shadowColor = COLOR[p.ink];
     ctx.shadowBlur = 12;
-    ctx.fillStyle = COLOR[p.type];
+    ctx.fillStyle = COLOR[p.ink];
     ctx.beginPath();
     ctx.arc(p.x, p.y, 7 * view.sc, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/** 僚機。ポッドと違って公転せず自機の脇に固定で並ぶ ― 別物だと見て分かるように。 */
+function drawWings(ctx, G) {
+  for (const w of G.wings) {
+    ctx.save();
+    ctx.shadowColor = COLOR[BARE];
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = COLOR[BARE];
+    const r = 5.5 * view.sc;
+    ctx.beginPath();
+    ctx.moveTo(w.x, w.y - r * 1.5);
+    ctx.lineTo(w.x + r, w.y);
+    ctx.lineTo(w.x, w.y + r * 1.5);
+    ctx.lineTo(w.x - r, w.y);
+    ctx.closePath();
     ctx.fill();
     ctx.restore();
   }
@@ -209,6 +278,8 @@ function drawPods(ctx, G) {
 function drawShip(ctx, G) {
   const sh = G.ship;
   const sc = view.sc;
+  const inks = G.rules.inks;
+  const step = turnStep(G);
 
   ctx.save();
   ctx.translate(sh.x, sh.y);
@@ -222,13 +293,12 @@ function drawShip(ctx, G) {
   ctx.closePath();
   ctx.fill();
 
-  // 3連バレルのリング。
-  // バレル i の弾種は TYPES[i] で固定し、砲塔ごと回す。
-  // ang が i 段ぶん回ったとき、そのバレルが真上に来て現在の弾種になる。
-  for (let i = 0; i < 3; i++) {
-    const a = sh.ang - i * TURN_STEP - Math.PI / 2;
+  // バレルのリング。本数は使える色の数と一致する（段階解放で増えていく）。
+  // バレル i の色は固定で、砲塔ごと回る。i 段ぶん回ったとき真上に来る。
+  for (let i = 0; i < inks.length; i++) {
+    const a = sh.ang - i * step - Math.PI / 2;
     const isTop = i === sh.idx;
-    ctx.fillStyle = COLOR[TYPES[i]];
+    ctx.fillStyle = COLOR[inks[i]];
     ctx.globalAlpha = isTop ? 1 : 0.45;
     ctx.beginPath();
     ctx.arc(Math.cos(a) * 26 * sc, Math.sin(a) * 26 * sc, (isTop ? 7 : 5) * sc, 0, Math.PI * 2);
@@ -237,10 +307,11 @@ function drawShip(ctx, G) {
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  ctx.fillStyle = COLOR[TYPES[sh.idx]];
-  ctx.font = `600 ${13 * sc}px system-ui,sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText(MARK[TYPES[sh.idx]], sh.x, view.H - 14);
+  // 今撃っている色。形が全部同じになったので記号ではなく色そのもので示す。
+  ctx.fillStyle = COLOR[shipInk(G)];
+  ctx.beginPath();
+  ctx.arc(sh.x, sh.y + 44 * sc, 6 * sc, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawParticles(ctx, G) {

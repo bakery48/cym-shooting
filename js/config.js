@@ -6,14 +6,21 @@ export const CONFIG = {
   runSeconds: 180,
   maxBreach: 10,
 
-  kill: { normal: 12, armored: 95, chaff: 5 },
+  // 報酬はインクの本数で決まる（剥がす手数がそのまま値段になる）
+  kill: { perInk: 12, armoredMul: 4, bare: 5 },
   armoredChance: { base: 0.05, perSec: 0.0004 },
-  // 白い敵（弾種を問わない下位の敵）の出現率。装甲とは排他。
-  chaffChance: { base: 0.18, perSec: 0 },
-  chaffRadius: 0.78,          // 通常敵に対する半径比。小さいことで「下位」を示す
+  // 白い敵（インクを持たない下位の敵）の出現率。装甲とは排他。
+  bareChance: { base: 0.18, perSec: 0 },
+  bareRadius: 0.78,          // 通常敵に対する半径比。小さいことで「下位」を示す
 
   spawn: { start: 1.00, min: 0.30, rampPerSec: 0.0038 },
   fall:  { start: 46,   rampPerSec: 0.55 },   // px/秒（縦640px基準）
+
+  // 落ち方のバリエーション。形を統一したぶん、差は挙動で付ける。
+  motion: {
+    leaf:  { swayHz: 0.55, swayPx: 46, fallMul: 0.78, spin: 2.4 },
+    dodge: { fallMul: 0.62, speed: 92, senseY: 190, senseX: 46 },
+  },
 
   ship: {
     fireBase: 0.30, fireMin: 0.10, firePerLv: 0.035,
@@ -47,24 +54,52 @@ export const CONFIG = {
   stage: { aspect: 0.78, minWidth: 300 },
 
   costs: {
-    podCircle: 150, podTri: 260, podSq: 400,
+    // ポッドは1基では2色以上の敵を倒し切れず、そろって初めて自動化が完成する。
+    // 価値が非線形なので、以前ほど段階的に高くしない。
+    pod: { C: 210, M: 140, Y: 300 },
     rate:   { base: 130, mul: 1.65, max: 5 },
     pierce: { base: 220, mul: 2.0,  max: 3 },
     spread: { base: 280, mul: 2.1,  max: 3 },
   },
 };
 
-export const TYPES = ['circle', 'tri', 'sq'];
+/* ============================================================
+   減法混色
+   ------------------------------------------------------------
+   敵は「まだ乗っているインク」を3ビットで持つ。撃たれた色のインクが剥がれ、
+   全部剥がれたら撃破。順番は問わない（赤にMを当てれば黄、Yを当てればマゼンタ）。
+
+     enemy.inks &= ~bullet.ink;
+     if (enemy.inks === 0) 撃破
+
+   インクを1本も持たない敵（BARE）は剥がすものが無いので1発で割れる。
+   ============================================================ */
+export const INK = { C: 1, M: 2, Y: 4 };
+export const BARE = 0;
+
+/** 砲塔が回る順。段階解放ではこの並びの先頭から順に開いていく。 */
+export const INK_ORDER = [INK.M, INK.C, INK.Y];
+
+export const INK_NAME = { [INK.C]: 'シアン', [INK.M]: 'マゼンタ', [INK.Y]: 'イエロー' };
+export const INK_ID   = { [INK.C]: 'C', [INK.M]: 'M', [INK.Y]: 'Y' };
 
 /**
- * 弾種を持たない敵の型。どの弾でも通る代わりに報酬が低い。
- * TYPES に入れないのは、自機の砲塔もポッドもこの型を「持てない」ため。
+ * インクの組み合わせごとの表示色。
+ * 物理的な乗算そのままだと青と黒が背景（#232a45）に沈むので、
+ * 色相の関係は保ったまま明度だけ上げてある。黒は縁を描いて浮かせる（§7）。
  */
-export const ANY = 'any';
-// 弾種と敵種の対応そのもの。装飾ではなく情報なので、他の用途に流用しない（企画書 §7）
-// 白は「どの弾種にも属さない」ことの表明。色が無い＝要求が無い。
-export const COLOR = { circle: '#ffe23c', tri: '#2fe4f0', sq: '#ff53d6', [ANY]: '#e8edff' };
-export const MARK  = { circle: '●', tri: '▲', sq: '■', [ANY]: '◆' };
+export const COLOR = {
+  0: '#e8edff',   // 素地（白）
+  1: '#2fe4f0',   // C
+  2: '#ff53d6',   // M
+  3: '#6a5cff',   // C+M = 青
+  4: '#ffe23c',   // Y
+  5: '#4ddb62',   // C+Y = 緑
+  6: '#ff5a45',   // M+Y = 赤
+  7: '#171c2b',   // C+M+Y = 黒
+};
+
+export const INK_COUNT = [0, 1, 1, 2, 1, 2, 2, 3];
 
 export const PALETTE = {
   bg: '#232a45',
@@ -74,7 +109,5 @@ export const PALETTE = {
   deflect: '#7a86b8',
   armorSpark: '#c9d2f0',
   hull: '#c9d2f0',
+  rim: '#8b93b8',      // 黒い敵を背景から浮かせるための縁
 };
-
-/** 1/3回転（ラジアン）。砲塔は3バレルなので一段 = 120度。 */
-export const TURN_STEP = (Math.PI * 2) / 3;

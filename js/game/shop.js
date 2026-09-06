@@ -1,18 +1,23 @@
-import { CONFIG } from '../config.js';
+import { CONFIG, INK, INK_NAME, COLOR } from '../config.js';
 import { syncPods } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 
+const podEntry = (id, ink) => ({
+  id, ink, name: `${INK_NAME[ink]} ポッド`,
+  cost: () => CONFIG.costs.pod[{ [INK.C]: 'C', [INK.M]: 'M', [INK.Y]: 'Y' }[ink]],
+  owned: (G) => G.up[id],
+  buy: (G) => { G.up[id] = true; syncPods(G); },
+});
+
 /**
- * ラン中に買える強化の定義。
+ * ラン中に買える強化の定義。買ったものはランが終わると失われる ―
+ * ここが毎ラン「全手動 → 自動化」の弧を作っている。
  * 企画書 §6 の原則により、ここに足せるのは「画面上の物が増える」強化だけ。
  */
 export const SHOP = [
-  { id: 'podCircle', name: '● ポッド', cost: () => CONFIG.costs.podCircle,
-    owned: (G) => G.up.podCircle, buy: (G) => { G.up.podCircle = true; syncPods(G); } },
-  { id: 'podTri', name: '▲ ポッド', cost: () => CONFIG.costs.podTri,
-    owned: (G) => G.up.podTri, buy: (G) => { G.up.podTri = true; syncPods(G); } },
-  { id: 'podSq', name: '■ ポッド', cost: () => CONFIG.costs.podSq,
-    owned: (G) => G.up.podSq, buy: (G) => { G.up.podSq = true; syncPods(G); } },
+  podEntry('podM', INK.M),
+  podEntry('podC', INK.C),
+  podEntry('podY', INK.Y),
 
   { id: 'rate', name: '連射速度', lv: (G) => G.up.rate, max: CONFIG.costs.rate.max,
     cost: (G) => scaled(CONFIG.costs.rate, G.up.rate), buy: (G) => G.up.rate++ },
@@ -26,25 +31,26 @@ const scaled = (c, lv) => Math.round(c.base * Math.pow(c.mul, lv));
 const isDone = (u, G) => (u.owned ? u.owned(G) : u.lv(G) >= u.max);
 
 export function createShop(rootEl, getGame) {
-  const buttons = SHOP.map((u, i) => {
+  const buttons = SHOP.map(() => {
     const b = document.createElement('button');
     b.className = 'buy';
     b.type = 'button';
-    b.innerHTML = '<span class="k"></span><span class="n"></span><span class="c"></span>';
-    b.addEventListener('click', () => purchase(i));
+    b.innerHTML = '<span class="k"></span><span class="n"><i class="sw"></i><span></span></span><span class="c"></span>';
     rootEl.appendChild(b);
     return b;
   });
+  buttons.forEach((b, i) => b.addEventListener('click', () => purchase(i)));
 
   let key = '';
 
-  /** 面ごとに買える強化が違う（モードの性格はここで作る）。 */
+  /** 面ごとに買える強化が違う（撃てない色のポッドは並ばない）。 */
   const available = (G) => SHOP.filter((u) => G.rules.shop.includes(u.id));
 
   function purchase(index) {
     const G = getGame();
+    if (!G || !G.running || G.paused) return false;
     const u = available(G)[index];
-    if (!G || !G.running || G.paused || !u || isDone(u, G)) return false;
+    if (!u || isDone(u, G)) return false;
     const cost = u.cost(G);
     if (G.money < cost) return false;
     G.money -= cost;
@@ -68,8 +74,11 @@ export function createShop(rootEl, getGame) {
       if (!u) return;
       const done = isDone(u, G);
       const cost = u.cost(G);
+      const sw = b.querySelector('.sw');
+      sw.hidden = !u.ink;
+      if (u.ink) sw.style.background = COLOR[u.ink];
       b.querySelector('.k').textContent = i + 1;
-      b.querySelector('.n').textContent = u.name + (u.lv && !done ? ` Lv${u.lv(G) + 1}` : '');
+      b.querySelector('.n span').textContent = u.name + (u.lv && !done ? ` Lv${u.lv(G) + 1}` : '');
       b.querySelector('.c').textContent = done ? (u.owned ? '稼働中' : 'MAX') : cost;
       b.classList.toggle('owned', done);
       b.classList.toggle('ready', !done && G.money >= cost);

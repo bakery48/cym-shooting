@@ -17,7 +17,7 @@ export function createHud() {
       if (key === last) return;
       last = key;
 
-      elStage.textContent = `${G.stage.name}・${G.stage.title}`;
+      elStage.textContent = `${G.stage.name} ${G.stage.title}`;
       elTime.textContent = `${mm}:${String(ss).padStart(2, '0')}`;
       elMoney.textContent = Math.floor(G.money);
       elBar.style.width = (G.breach / G.rules.maxBreach * 100) + '%';
@@ -36,7 +36,7 @@ export function renderResults(G, best, updated, cores) {
 
   $('end-title').textContent = G.endReason;
   $('end-title').classList.toggle('failed', !G.cleared);
-  $('end-stage').textContent = `${G.stage.name}・${G.stage.title}`;
+  $('end-stage').textContent = `${G.stage.name} ${G.stage.title}`;
   $('end-results').innerHTML = `
     <dt>撃破</dt><dd>${total}${isNew('kills')}</dd>
     <dt>自機 / ポッド</dt><dd>${s.ship} / ${s.pod}（自動 ${autoRate}%）</dd>

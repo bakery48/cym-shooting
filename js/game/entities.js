@@ -1,35 +1,41 @@
-import { CONFIG, ANY } from '../config.js';
-import { pickType } from '../stages.js';
+import { CONFIG, BARE } from '../config.js';
+import { pickWeighted } from '../stages.js';
 import { view } from '../core/view.js';
 
 export function spawnEnemy(G) {
-  // 白い敵と装甲は排他。片方は「どの弾でも通る」、もう片方は「自機の弾しか通らない」で、
-  // 要求が正反対になるため同居させない。
-  const chaff = Math.random() < G.rules.chaffChance.base + G.rules.chaffChance.perSec * G.t;
+  // 白い敵（インクなし）と装甲は排他。片方は「1発で割れる」、
+  // もう片方は「自機の弾しか通らない」で、性格が正反対になるため同居させない。
+  const bare = Math.random() < G.rules.bareChance.base + G.rules.bareChance.perSec * G.t;
   const ac = G.rules.armoredChance;
-  const armored = !chaff && Math.random() < ac.base + ac.perSec * G.t;
+  const armored = !bare && Math.random() < ac.base + ac.perSec * G.t;
 
-  const type = chaff ? ANY : pickType(G.rules.weights);
-  const r = 18 * view.sc * (chaff ? CONFIG.chaffRadius : 1);
+  const inks = bare ? BARE : Number(pickWeighted(G.rules.pool));
+  const motion = pickWeighted(G.rules.motions);
+  const r = 18 * view.sc * (bare ? CONFIG.bareRadius : 1);
 
   G.enemies.push({
-    type,
+    inks,
+    // 報酬は「元々何色乗っていたか」で決まる。剥がしていくと inks は減るので、
+    // 撃破時の残りから計算すると必ず取りこぼす。
+    inks0: inks,
+    armored, motion,
     x: r * 2 + Math.random() * Math.max(1, view.W - r * 4),
     y: -r * 2,
-    r, hp: armored ? 3 : 1, armored,
+    r,
+    vx: 0,
     rot: Math.random() * Math.PI * 2,
+    phase: Math.random() * Math.PI * 2,   // 木の葉の揺れの位相
     hit: 0,
   });
 }
 
 /**
  * 弾を発射する。angle は上方向を0とした射角（ラジアン）。
- * 自機のみ拡散・貫通の強化が乗る。
+ * 自機のみ拡散・貫通・弾芯が乗る。
  */
-export function shoot(G, x, y, type, from, angle) {
+export function shoot(G, x, y, ink, from, angle) {
   const n = 1 + (from === 'ship' ? G.up.spread : 0);
   const speed = (from === 'ship' ? CONFIG.ship.bulletSpeed : CONFIG.pod.bulletSpeed) * view.S;
-  // 弾芯（恒久）は自機の弾だけを太くする
   const grow = from === 'ship' ? 1 + G.meta.core * CONFIG.meta.bullet.radiusPerLv : 1;
 
   for (let i = 0; i < n; i++) {
@@ -39,7 +45,7 @@ export function shoot(G, x, y, type, from, angle) {
       x, y,
       vx: Math.sin(a) * speed,
       vy: -Math.cos(a) * speed,
-      type, from,
+      ink, from,
       r: 4.5 * view.sc * grow,
       pierce: from === 'ship' ? G.up.pierce : 0,
     });

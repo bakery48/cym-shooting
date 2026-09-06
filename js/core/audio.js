@@ -5,11 +5,22 @@
  * AudioContext はユーザー操作より前には開始できないので、
  * 最初の操作まで生成を遅らせる。音が出せない環境でも黙って続行する。
  */
-import { ANY } from '../config.js';
+import { INK, BARE, INK_COUNT } from '../config.js';
 
-// ド・ミ・ソ。白い敵は弾種を持たないので、一段上のドを軽く鳴らす。
-const TYPE_HZ = { circle: 523.25, tri: 659.25, sq: 783.99, [ANY]: 1046.5 };
-const HZ = (type) => TYPE_HZ[type] ?? TYPE_HZ.circle;
+// ド・ミ・ソ。素地（インクなし）は一段上のドを軽く鳴らす。
+const INK_HZ = { [INK.M]: 523.25, [INK.C]: 659.25, [INK.Y]: 783.99, [BARE]: 1046.5 };
+
+/**
+ * インクの組み合わせを1つの音程にする。
+ * 一番下のビットの音を基準にし、本数が多いほど低く重くする ―
+ * 黒（3色）が一番手強いことが音でも分かるように。
+ */
+function HZ(inks) {
+  if (inks === BARE) return INK_HZ[BARE];
+  const lowest = inks & -inks;                      // 最下位の立っているビット
+  const base = INK_HZ[lowest] ?? INK_HZ[INK.M];
+  return base / (1 + 0.18 * (INK_COUNT[inks] - 1));
+}
 
 let ctx = null;
 let master = null;
@@ -88,17 +99,21 @@ function noise({ dur = 0.12, gain = 0.2, hz = 1200, q = 1, sweepTo = null }) {
 
 const EFFECTS = {
   /** 砲塔が一段回った。手数のフィードバックなので、必ず鳴らす。 */
-  rotate(type) {
-    tone({ freq: HZ(type), dur: 0.07, type: 'square', gain: 0.10 });
+  rotate(ink) {
+    tone({ freq: HZ(ink), dur: 0.07, type: 'square', gain: 0.10 });
   },
-  kill(type) {
-    // 白い敵は下位なので、同じ形の音を軽く短く鳴らす
-    const light = type === ANY;
-    tone({ freq: HZ(type), to: HZ(type) * 2, dur: light ? 0.07 : 0.10, gain: light ? 0.08 : 0.14 });
+  kill(inks) {
+    // 素地は下位なので、同じ形の音を軽く短く鳴らす
+    const light = inks === BARE;
+    tone({ freq: HZ(inks), to: HZ(inks) * 2, dur: light ? 0.07 : 0.10, gain: light ? 0.08 : 0.14 });
   },
-  killArmored(type) {
-    tone({ freq: HZ(type) / 2, to: HZ(type) * 1.5, dur: 0.26, gain: 0.22 });
-    tone({ freq: HZ(type), dur: 0.22, gain: 0.12, delay: 0.05 });
+  killArmored(inks) {
+    tone({ freq: HZ(inks) / 2, to: HZ(inks) * 1.5, dur: 0.26, gain: 0.22 });
+    tone({ freq: HZ(inks), dur: 0.22, gain: 0.12, delay: 0.05 });
+  },
+  /** インクが1枚剥がれて色が変わった。まだ落ちていないので撃破音とは分ける。 */
+  peel(remaining) {
+    tone({ freq: HZ(remaining) * 0.8, to: HZ(remaining), dur: 0.06, gain: 0.09, type: 'sine' });
   },
   /** 種類違いで弾かれた。空振りが分かることが目的なので鈍い音にする。 */
   deflect() {
