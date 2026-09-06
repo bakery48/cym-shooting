@@ -35,7 +35,7 @@ export const CONFIG = {
     // 破片は左下・右下へ**加速しながら**散る。等速で分かれるより
     // 「割れた」に見えるのと、開き方が時間とともに変わるので追う手が要る。
     split:   { fragments: 2, radiusMul: 0.6, spreadPx: 10, fallMul: 1.0,
-               burst: { ax: 210, vxMax: 120, ay: 110, vyMax: 110, spin: 3.2 } },
+               burst: { ax: 210, vxMax: 120, ay: 110, vyMax: 110, spin: 3.2, bounce: 0.8 } },
     // 群れ: 同じ単色がまとまって湧く。照合は増えず、位置取りだけが問われる。
     cluster: { min: 3, max: 5, gapMul: 2.3 },
     // 急降下: 遅く落ちてきて途中から加速する。「遅いうちに撃つか、後回しにするか」。

@@ -166,9 +166,14 @@ function moveEnemy(G, e, dt, base) {
     e.vx = e.bvx;
     e.x += e.bvx * dt;
     e.y += (baseFall + e.bvy) * dt;
-    e.rot += dt * k.spin * e.burstSide;
-    // 壁に着いたら横の勢いは死ぬ（押し付け続けると張り付いて見える）
-    if (e.x <= e.r || e.x >= view.W - e.r) e.bvx = 0;
+    e.rot += dt * k.spin * (e.burstSide || 1);
+    // 壁では跳ね返す。勢いを殺すと、斜めに飛んだものが急に真下へ落ち始めて見える。
+    // 弾けた勢いは一度きりなので、跳ねた後は加速をやめて（burstSide = 0）
+    // 反発ぶんだけ弱まった速度で戻る ― 壁の間を等速で往復し続けないように。
+    if ((e.x <= e.r && e.bvx < 0) || (e.x >= view.W - e.r && e.bvx > 0)) {
+      e.bvx = -e.bvx * k.bounce;
+      e.burstSide = 0;
+    }
   } else if (e.motion === 'dodge') {
     e.y += baseFall * m.dodge.fallMul * dt;
     e.vx = dodgeDrift(G, e) * m.dodge.speed * view.S;
