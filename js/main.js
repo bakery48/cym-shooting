@@ -69,7 +69,13 @@ const select = createSelect(() => progress, begin, (item) => {
   return ok;
 });
 // テスト用パネル。ゲーム側からは参照しない（出荷時はこの2行を外せば消える）。
-const dev = createDev(() => progress, () => { saveProgress(progress); refreshSelect(); });
+const dev = createDev(() => progress, () => { saveProgress(progress); refreshSelect(); }, forceEnd);
+
+/** テスト用: ラン中に結果を決めて終わらせる。パネルを開いているときだけ効く。 */
+function forceEnd(cleared) {
+  if (!dev.visible || !G || !G.running) return;
+  gameOver(cleared ? 'クリア' : '防衛ライン崩壊', cleared);
+}
 dev.setVisible(progress.settings.dev || new URLSearchParams(location.search).has('dev'));
 
 function refreshSelect() {
@@ -87,8 +93,9 @@ const input = createInput({
     progress.settings.dev = dev.toggle();
     saveProgress(progress);
     if (dev.visible) dev.paint();
-
+    dev.setRunning(!!G?.running);
   },
+  onForceEnd: forceEnd,
 });
 
 /** 音量設定は1つしか無いので、今出ている画面へ差し替えて置く。 */
@@ -137,10 +144,12 @@ function begin(stage) {
   shop.invalidate();
   shop.paint(true);
   hud.paint(G);
+  dev.setRunning(true);
 }
 
 function openSelect() {
   G = null;
+  dev.setRunning(false);
   refreshSelect();
   showScreen('select');
 }
@@ -173,6 +182,7 @@ function gameOver(reason, cleared) {
 
   showScreen('end');
   shop.paint(true);
+  dev.setRunning(false);
 }
 
 function nextStage(stage) {

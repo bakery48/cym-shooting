@@ -223,3 +223,11 @@ button.meta:focus-visible{outline:2px solid var(--ui-hi);outline-offset:2px}
 #end-core b{font-size:22px;font-weight:650;color:var(--armor);
   font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 #end-core span{font-size:10.5px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+
+/* テスト用: ラン中の強制終了。遊びの一部ではないので隅に小さく置く */
+#dev-run{position:absolute;left:8px;bottom:8px;z-index:2;display:flex;gap:6px}
+#dev-run button{font:inherit;font-size:10.5px;color:var(--ink-dim);
+  background:rgba(27,32,56,.85);border:1px dashed var(--lane-edge);
+  border-radius:7px;padding:4px 9px;cursor:pointer;display:flex;align-items:center;gap:5px}
+#dev-run button:hover{color:var(--ink);border-color:var(--ui-hi)}
+#dev-run kbd{font-size:9px;padding:0 4px;border-bottom-width:1px}

@@ -17,8 +17,12 @@ const ROTATE     = new Set(['Space', 'KeyW', 'ArrowUp']);
 const PAUSE      = new Set(['Escape', 'KeyP']);
 const MUTE       = new Set(['KeyM']);
 const DEV        = new Set(['Backquote']);   // テスト用パネルの開閉
+// テスト用の強制終了。パネルを開いているときだけ効く（誤爆防止）
+const FORCE_CLEAR = new Set(['KeyC']);
+const FORCE_FAIL  = new Set(['KeyF']);
 
-export function createInput({ canvas, getGame, onPause, onShopHotkey, onToggleMute, onToggleDev }) {
+export function createInput({ canvas, getGame, onPause, onShopHotkey, onToggleMute, onToggleDev,
+                              onForceEnd }) {
   const keys = new Set();
   const state = {
     pointerX: null,   // ポインタで指定された絶対X（null なら未指定）
@@ -78,6 +82,8 @@ export function createInput({ canvas, getGame, onPause, onShopHotkey, onToggleMu
     if (PAUSE.has(e.code)) { e.preventDefault(); onPause(); return; }
     if (MUTE.has(e.code)) { e.preventDefault(); onToggleMute(); return; }
     if (DEV.has(e.code)) { e.preventDefault(); onToggleDev(); return; }
+    if (FORCE_CLEAR.has(e.code)) { e.preventDefault(); onForceEnd(true); return; }
+    if (FORCE_FAIL.has(e.code)) { e.preventDefault(); onForceEnd(false); return; }
 
     const shopIndex = '123456'.indexOf(e.key);
     if (shopIndex >= 0) { e.preventDefault(); onShopHotkey(shopIndex); return; }
