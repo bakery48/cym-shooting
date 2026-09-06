@@ -71,7 +71,10 @@ export const STAGES = [
       [C | M | Y]: at(0.82, [0.4, 2]),
     },
     motions: { drift: 3, leaf: 1 },
+    // 増殖はここには置かない ― 1-3 は最初の関門なので役割を増やしすぎない
     roles: { normal: 6, cluster: 2, split: 2, carry: 1 },
+    // 役割が4種そろう面なので、既定より薄くする
+    spawn: { rate0: 0.55, rate1: 5.4, curve: 2.0 },
     shop: ALL,
   },
   {
@@ -86,7 +89,7 @@ export const STAGES = [
       [C | M | Y]: at(0.72, [0.5, 3]),
     },
     motions: { drift: 3, leaf: 2, dodge: 2 },
-    roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1 },
+    roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1, breed: 1 },
     spawn: { rate0: 0.60, rate1: 7.0, curve: 2.0 },
     shop: ALL,
   },
@@ -101,7 +104,7 @@ export const STAGES = [
       [C | M | Y]: at(0.40, [1, 9]),
     },
     motions: { drift: 3, leaf: 1, dodge: 1 },
-    roles: { normal: 6, split: 2, dive: 1, carry: 1 },
+    roles: { normal: 6, split: 2, dive: 1, carry: 1, breed: 2 },
     // 黒は1体3発。体数で押すと手数が足りなくなるので伸びは抑える
     spawn: { rate0: 0.50, rate1: 5.0, curve: 1.9 },
     bareChance: { base: 0.10 },
@@ -120,7 +123,7 @@ export const STAGES = [
       [C | M | Y]: at(0.66, [0.4, 3]),
     },
     motions: { drift: 3, leaf: 2, dodge: 1 },
-    roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 2 },
+    roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 2, breed: 2 },
     spawn: { rate0: 0.60, rate1: 5.1, curve: 2.1 },
     fall: { start: 50, rampPerSec: 0.52 },
     armoredChance: { base: 0.08, perSec: 0.0006 },
@@ -156,7 +159,7 @@ export const STAGES = [
       [C | M]: at(0.15, [1, 2]), [M | Y]: at(0.35, [1, 2]), [C | Y]: at(0.55, [1, 2]),
     },
     motions: { drift: 3, leaf: 1, dodge: 1 },
-    roles: { normal: 5, cluster: 2, split: 1, carry: 2 },
+    roles: { normal: 5, cluster: 2, split: 1, carry: 2, breed: 1 },
     armoredChance: { base: 0.30, perSec: 0.0015 },
     bareChance: { base: 0.08 },
     spawn: { rate0: 0.70, rate1: 3.6, curve: 1.8 },
@@ -288,7 +291,7 @@ export function validateStages() {
       }
     }
     for (const key of Object.keys(s.roles ?? {})) {
-      if (!['normal', 'split', 'cluster', 'dive', 'carry'].includes(key)) {
+      if (!['normal', 'split', 'cluster', 'dive', 'carry', 'breed'].includes(key)) {
         problems.push(`${s.id}: 未知の役割 "${key}"`);
       }
     }

@@ -11,6 +11,7 @@ import { shipInk, turnStep } from '../core/state.js';
  *   split    ひょうたん  くびれが「2つに割れる」ことを示す
  *   dive     下向きの楔  尖った先が進行方向。速さと向きが形から読める
  *   carry    八角形     大きく重い。内側にもう一重の枠を描く
+ *   breed    とげ玉     増える。凸多角形の中で唯一とがっていて、遠目でも分かる
  *
  * 自機は三角、ポッドは円、僚機は菱形なので、敵とは形で区別できる。
  */
@@ -28,6 +29,21 @@ function polygon(ctx, x, y, r, rot, n) {
 export function enemyPath(ctx, x, y, r, rot, role = 'normal') {
   if (role === 'cluster') return polygon(ctx, x, y, r * 0.95, rot + Math.PI / 4, 4);
   if (role === 'carry')   return polygon(ctx, x, y, r, rot, 8);
+
+  if (role === 'breed') {
+    // とげ玉。他の役割は全部なめらかな凸多角形なので、遠目でもここだけ浮く。
+    const spikes = 7;
+    ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+      const a = rot + i * Math.PI / spikes;
+      const rr = i % 2 ? r * 0.62 : r;
+      const px = x + Math.cos(a) * rr;
+      const py = y + Math.sin(a) * rr;
+      if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+    return;
+  }
 
   if (role === 'split') {
     // 上下2つの丸をくびれでつなぐ。塗りは重なりを1つの形として埋める。
@@ -269,11 +285,32 @@ function drawEnemies(ctx, G) {
       ctx.stroke();
     }
     if (e.role === 'carry') drawCargoRing(ctx, e.r, e.rot, e.inks);
+    if (e.role === 'breed') drawBreedGauge(ctx, e);
     if (e.dive === 'warn') drawDiveWarning(ctx, e);
     // 何が混ざっているかの案内は、回転させずに常に水平に並べる
     drawInkGuide(ctx, e.r, e.inks);
     ctx.restore();
   }
+}
+
+/**
+ * 増殖までの残り時間。敵を囲む弧が一周すると分かれる。
+ * **いつ増えるかが読めないと「後回しにした結果」が運になる**ので、
+ * 残り時間そのものを出す。上限の世代まで来たらもう出さない。
+ */
+function drawBreedGauge(ctx, e) {
+  const b = CONFIG.roles.breed;
+  if (e.breedGen >= b.maxGen) return;
+  const k = 1 - Math.max(0, Math.min(1, e.breedT / b.interval));   // 0 -> 1 で満ちる
+  ctx.save();
+  ctx.rotate(-e.rot);                       // 回転に引きずられず、常に真上から始める
+  ctx.strokeStyle = PALETTE.armor;
+  ctx.globalAlpha = 0.35 + 0.5 * k;
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  ctx.arc(0, 0, e.r * 1.34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k);
+  ctx.stroke();
+  ctx.restore();
 }
 
 /**

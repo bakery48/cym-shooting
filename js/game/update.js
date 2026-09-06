@@ -2,7 +2,7 @@ import { CONFIG, COLOR, PALETTE, BARE, INK_COUNT } from '../config.js';
 import { view } from '../core/view.js';
 import { fireInterval, shipInk } from '../core/state.js';
 import { sfx } from '../core/audio.js';
-import { spawnEnemy, spawnFragments, shoot, burst } from './entities.js';
+import { spawnEnemy, spawnFragments, spawnOffspring, shoot, burst } from './entities.js';
 
 export function update(G, dt, input, onGameOver) {
   G.t += dt;
@@ -130,6 +130,7 @@ function updateEnemies(G, dt) {
   for (let i = G.enemies.length - 1; i >= 0; i--) {
     const e = G.enemies[i];
     moveEnemy(G, e, dt, baseFall);
+    breedTick(G, e, dt);
     e.hit = Math.max(0, e.hit - dt * 5);
 
     if (e.y - e.r >= view.LINE) {
@@ -138,6 +139,30 @@ function updateEnemies(G, dt) {
       absorbOrBreach(G, e.x, e.role === 'carry' ? CONFIG.roles.carry.breachCost : 1);
     }
   }
+}
+
+/**
+ * 増殖。放っておくと一定時間ごとに倍々に分かれる。
+ *
+ * 後ろに押していける敵ばかりだと「順番」の判断が生まれないので、
+ * **待つほど損になる敵**を1種類だけ置いている。落下は遅いので、
+ * 難しいのは当てることではなく「いつ手を回すか」。
+ *
+ * 分裂は後ろに追加するだけ。呼び出し側は後ろから走査しているので、
+ * 生まれたばかりの分体を同じフレームでもう一度回すことはない。
+ */
+function breedTick(G, e, dt) {
+  const b = CONFIG.roles.breed;
+  if (e.role !== 'breed' || e.breedGen >= b.maxGen) return;
+  // 画面が溢れたら止める（保険。ここに掛かる時点で既に手遅れではある）
+  if (G.enemies.length >= b.cap) return;
+
+  e.breedT -= dt;
+  if (e.breedT > 0) return;
+
+  spawnOffspring(G, e);
+  burst(G, e.x, e.y, COLOR[e.inks], 8);
+  sfx.peel(e.inks);
 }
 
 /**
@@ -345,7 +370,8 @@ function resolveBulletHit(G, b, i) {
 function reward(e, inks0) {
   if (inks0 === BARE) return CONFIG.kill.bare;
   const mul = (e.armored ? CONFIG.kill.armoredMul : 1)
-            * (e.role === 'carry' ? CONFIG.roles.carry.rewardMul : 1);
+            * (e.role === 'carry' ? CONFIG.roles.carry.rewardMul : 1)
+            * (e.rewardMul ?? 1);
   return Math.round(CONFIG.kill.perInk * INK_COUNT[inks0] * mul);
 }
 

@@ -19,6 +19,8 @@ function makeEnemy(G, { inks, armored, motion, role, x, r, fallMul }) {
     dive: role === 'dive' ? 'slow' : null, // slow -> warn -> fast
     diveT: 0,
     dodgeDir: 0,                          // 回避が今ずれている向き（0 = 止まっている）
+    breedT: 0, breedGen: 0,               // 増殖の残り時間と世代
+    rewardMul: 1,
     hit: 0,
   };
 }
@@ -42,21 +44,29 @@ export function spawnEnemy(G) {
   //   分裂  黒（3発）と重ねない。3発かけたうえに破片2体は重すぎる
   //   運び屋 素地と重ねない。安い敵に高い突破ペナルティは読み違えのもと
   //   急降下 落ち方は drift 固定。揺れながら急降下する敵は挙動が読めない
+  //   増殖  必ず単色・非装甲。倍々に増えるものの照合が重いと詰みに直結する
   let finalRole = role;
   if (bare && (role === 'split' || role === 'carry')) finalRole = 'normal';
   if (role === 'split' && INK_COUNT[inks] === 3) finalRole = 'normal';
+  if (role === 'breed' && (bare || armored || INK_COUNT[inks] !== 1)) finalRole = 'normal';
 
   const rMul = finalRole === 'carry' ? CONFIG.roles.carry.radiusMul : 1;
   const r = 18 * view.sc * (bare ? CONFIG.bareRadius : 1) * rMul;
   const fall = fallMulFor(G.rules.pool, inks, progress)
-    * (finalRole === 'carry' ? CONFIG.roles.carry.fallMul : 1);
+    * (finalRole === 'carry' ? CONFIG.roles.carry.fallMul : 1)
+    * (finalRole === 'breed' ? CONFIG.roles.breed.fallMul : 1);
 
-  G.enemies.push(makeEnemy(G, {
+  const born = makeEnemy(G, {
     inks, armored, role: finalRole,
     motion: finalRole === 'dive' ? 'drift' : pickWeighted(G.rules.motions),
     x: r * 2 + Math.random() * Math.max(1, view.W - r * 4),
     r, fallMul: fall,
-  }));
+  });
+  if (finalRole === 'breed') {
+    born.breedT = CONFIG.roles.breed.interval;
+    born.rewardMul = CONFIG.roles.breed.value;
+  }
+  G.enemies.push(born);
 }
 
 /**
@@ -116,6 +126,35 @@ export function spawnFragments(G, from) {
       vx: 0, rot: Math.random() * Math.PI * 2, phase: 0, hit: 0,
     });
   }
+}
+
+/**
+ * 増殖の分体。**親と同じ単色・同じ役割**で、世代がひとつ進む。
+ * 世代ごとに報酬は半分になるので、泳がせて増やしても総額は変わらない ―
+ * 「稼ぐために放置する」が最適解になると、この役割の狙い（後回しにできない）
+ * が壊れる。
+ */
+export function spawnOffspring(G, from) {
+  const b = CONFIG.roles.breed;
+  const gen = from.breedGen + 1;
+  const r = from.r * b.radiusMul;
+  const gap = b.gapPx * view.sc;
+
+  from.breedGen = gen;
+  from.r = r;
+  from.breedT = b.interval;
+  from.rewardMul = b.value / Math.pow(2, gen);
+  from.x = Math.max(r, Math.min(view.W - r, from.x - gap / 2));
+
+  const child = {
+    ...from,
+    x: Math.max(r, Math.min(view.W - r, from.x + gap)),
+    rot: Math.random() * Math.PI * 2,
+    phase: Math.random() * Math.PI * 2,
+    hit: 1,
+  };
+  G.enemies.push(child);
+  return child;
 }
 
 /**
