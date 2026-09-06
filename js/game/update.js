@@ -36,12 +36,14 @@ function updateShip(G, dt, input) {
 
 function updatePods(G, dt) {
   const sh = G.ship;
-  const radius = CONFIG.pod.orbitRadius * view.sc;
+  const base = CONFIG.pod.orbitRadius * view.sc;
+  const radius = base * ringScale(G.pods.length);
 
   for (const p of G.pods) {
     p.a += CONFIG.pod.orbitSpeed * dt;
     p.x = sh.x + Math.cos(p.a) * radius;
-    p.y = sh.y + Math.sin(p.a) * radius * 0.72;
+    // 縦だけは広げない。輪が下に伸びると防衛ラインを跨いでしまう
+    p.y = sh.y + Math.sin(p.a) * base * 0.72;
     recordTrail(p, sh, dt);
 
     p.cd -= dt;
@@ -55,6 +57,15 @@ function updatePods(G, dt) {
     shoot(G, p.x, p.y, p.ink, 'pod', angle);
     p.cd = fireInterval(G) * CONFIG.pod.fireMul;
   }
+}
+
+/**
+ * 基数が増えるほど公転の輪を横に広げる（団子にならないように）。
+ * 縦は広げない ― 下へ伸びると輪が防衛ラインを跨いで意味が濁る。
+ */
+function ringScale(n) {
+  const { ringPerPod, ringMax } = CONFIG.pod;
+  return Math.min(ringMax, 1 + ringPerPod * Math.max(0, n - 1));
 }
 
 /**
@@ -77,9 +88,13 @@ function recordTrail(p, sh, dt) {
  * ポッドの標的。自分の色のインクが乗っている敵を優先し、
  * 居ないときだけ素地の敵（インクなし）を撃つ。
  * 素地を同列に扱うと、ポッドが本来の担当を放って安い敵に構い始める。
+ *
+ * 同色を増設したときは `slot` の順に「n番目に近い敵」を狙う ―
+ * 全基が同じ1体に撃ち込むと、増設したぶんがそのまま無駄弾になる。
  */
 function findPodTarget(G, p) {
-  return nearest(G, p, (e) => e.inks & p.ink) ?? nearest(G, p, (e) => e.inks === BARE);
+  return nthNearest(G, p, (e) => e.inks & p.ink, p.slot)
+      ?? nthNearest(G, p, (e) => e.inks === BARE, p.slot);
 }
 
 /**
@@ -105,23 +120,30 @@ function updateWings(G, dt) {
   }
 }
 
-function nearest(G, from, accept, range = CONFIG.pod.range) {
-  let best = null;
-  let bestDist = range * view.S;
+const nearest = (G, from, accept, range) => nthNearest(G, from, accept, 0, range);
+
+/**
+ * 近い順に n 番目の敵。候補が足りなければいちばん遠い候補（＝実質いちばん近い1体）に落とす。
+ */
+function nthNearest(G, from, accept, n = 0, range = CONFIG.pod.range) {
+  const found = [];
+  const max = range * view.S;
   for (const e of G.enemies) {
     // 装甲敵はポッドの弾を弾くので狙わない。
     // 既に撃ち手より下にいる敵も、撃っても届かないので対象外にする。
     if (e.armored || e.y > from.y || !accept(e)) continue;
     const d = Math.hypot(e.x - from.x, e.y - from.y);
-    if (d < bestDist) { bestDist = d; best = e; }
+    if (d < max) found.push({ e, d });
   }
-  return best;
+  if (!found.length) return null;
+  found.sort((a, b) => a.d - b.d);
+  return found[Math.min(n, found.length - 1)].e;
 }
 
 function updateEnemies(G, dt) {
   const { fall: f, spawn: sp } = G.rules;
   const baseFall = (f.start + f.rampPerSec * G.t) * view.S;
-  const interval = Math.max(sp.min, sp.start - sp.rampPerSec * G.t);
+  const interval = spawnInterval(G);
 
   G.nextSpawn -= dt;
   if (G.nextSpawn <= 0) { spawnEnemy(G); G.nextSpawn = interval; }
@@ -168,6 +190,20 @@ function moveEnemy(G, e, dt, base) {
 
   // 画面の外へは出さない（避け続けて端に張り付くのを防ぐ）
   e.x = Math.max(e.r, Math.min(view.W - e.r, e.x));
+}
+
+/**
+ * 湧きの密度カーブ。in（降ってくる数）側の本体。
+ *
+ * **間隔（秒）ではなく毎秒の湧き数で補間する。** 間隔を等速で詰めると
+ * 毎秒の数は後半に跳ね上がる形になり、中盤がずっと平坦なまま最後だけ急に
+ * 洪水になる。毎秒の数で補間すれば、画面の濃さがそのまま素直に増える。
+ */
+export function spawnInterval(G) {
+  const sp = G.rules.spawn;
+  const p = Math.min(1, G.t / G.rules.runSeconds);
+  const rate = sp.rate0 + (sp.rate1 - sp.rate0) * Math.pow(p, sp.curve);
+  return 1 / rate;
 }
 
 /**

@@ -23,7 +23,8 @@ export function newGame(stage, meta) {
     enemies: [], bullets: [], parts: [], pods: [],
     nextSpawn: 0.6, shake: 0, flash: 0, shieldFlash: 0,
     // ラン内強化は毎回ゼロから。ここが企画書 §2 の弧を毎ラン成立させている。
-    up: { podC: false, podM: false, podY: false, rate: 0, pierce: 0, spread: 0, ...rules.startUp },
+    // ポッドは色ごとの「基数」。1基目で自動化が始まり、以降は増設で密度が上がる。
+    up: { podC: 0, podM: 0, podY: 0, rate: 0, pierce: 0, spread: 0, ...rules.startUp },
     st: { ship: 0, pod: 0, armored: 0, breach: 0, earned: 0 },
     endReason: '',
   };
@@ -44,17 +45,49 @@ export const turnStep = (G) => (Math.PI * 2) / Math.max(1, G.rules.inks.length);
 /**
  * 所持ポッドの一覧と G.pods を同期する。
  * 既存ポッドは公転角と航跡を保ったまま残し、新規ぶんだけ空いた位相に配置する。
+ *
+ * 同じ色を何基でも増設できる。`slot` は同色内の番号で、
+ * 「何番目に近い敵を狙うか」に使う ― 全基が同じ敵に撃つと増設が無駄になる。
  */
 export function syncPods(G) {
-  const wanted = G.rules.inks.filter((ink) => G.up[podIdFor(ink)]);
-  const kept = G.pods.filter((p) => wanted.includes(p.ink));
+  const wanted = [];
+  for (const ink of G.rules.inks) {
+    const n = G.up[podIdFor(ink)] | 0;
+    for (let slot = 0; slot < n; slot++) wanted.push({ ink, slot });
+  }
 
-  G.pods = wanted.map((ink, i) => {
-    const old = kept.find((p) => p.ink === ink);
-    if (old) return old;
-    return { ink, a: (i / wanted.length) * Math.PI * 2, x: 0, y: 0, cd: Math.random() * 0.4,
-             trail: [], trailT: 0 };
-  });
+  const kept = new Map(G.pods.map((p) => [`${p.ink}/${p.slot}`, p]));
+  const pods = wanted.map(({ ink, slot }) => kept.get(`${ink}/${slot}`)
+    ?? { ink, slot, a: null, x: 0, y: 0, cd: Math.random() * 0.4, trail: [], trailT: 0 });
+
+  // **既存の位相をすべて数え上げてから**新規ぶんを配る。
+  // 作りながら配ると、まだ配列に入っていない既存ポッドと同じ角度を選んで重なる。
+  const taken = pods.filter((p) => p.a !== null).map((p) => p.a);
+  for (const p of pods) {
+    if (p.a !== null) continue;
+    p.a = phaseInLargestGap(taken);
+    taken.push(p.a);
+  }
+  G.pods = pods;
+}
+
+/**
+ * 公転リングの「いちばん広い隙間」の中央を返す。
+ * 全基が同じ角速度で回るので初期位相はずっと保たれる ―
+ * 追加のたびに割り振り直すと既存のポッドが飛ぶので、空きに差し込む。
+ */
+function phaseInLargestGap(taken) {
+  if (!taken.length) return 0;
+  const TAU = Math.PI * 2;
+  const angs = taken.map((a) => ((a % TAU) + TAU) % TAU).sort((a, b) => a - b);
+  // 最後の1つから最初の1つへ回り込む隙間から始める
+  let bestGap = TAU - angs[angs.length - 1] + angs[0];
+  let best = angs[angs.length - 1] + bestGap / 2;
+  for (let i = 1; i < angs.length; i++) {
+    const gap = angs[i] - angs[i - 1];
+    if (gap > bestGap) { bestGap = gap; best = angs[i - 1] + gap / 2; }
+  }
+  return best % TAU;
 }
 
 /** 僚機は自機の脇に固定で並ぶ。ポッドと違って公転しない（別物だと見て分かるように）。 */

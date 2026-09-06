@@ -7,13 +7,17 @@ export const CONFIG = {
   maxBreach: 10,
 
   // 報酬はインクの本数で決まる（剥がす手数がそのまま値段になる）
-  kill: { perInk: 12, armoredMul: 4, bare: 5 },
+  kill: { perInk: 15, armoredMul: 4, bare: 5 },
   armoredChance: { base: 0.05, perSec: 0.0004 },
   // 白い敵（インクを持たない下位の敵）の出現率。装甲とは排他。
   bareChance: { base: 0.18, perSec: 0 },
   bareRadius: 0.78,          // 通常敵に対する半径比。小さいことで「下位」を示す
 
-  spawn: { start: 1.00, min: 0.30, rampPerSec: 0.0038 },
+  // 湧きの密度カーブ。**毎秒の湧き数**を rate0 から rate1 へ、
+  // 進行度の curve 乗で増やす（curve > 1 で後半ほど伸びる）。
+  // 間隔（秒）で補間すると毎秒の数が終盤だけ跳ね上がる形になるので、
+  // 「だんだん濃くなる」を素直に書けるほうを取っている。
+  spawn: { rate0: 0.55, rate1: 7.0, curve: 2.0 },
   fall:  { start: 46,   rampPerSec: 0.55 },   // px/秒（縦640px基準）
 
   // 混色の導入。頭が追いつかないのを防ぐため、種類は時間で少しずつ増やす。
@@ -61,6 +65,9 @@ export const CONFIG = {
     // 長さを変えたいときは samples ではなく interval を動かす ―
     // samples は描画するセグメント数そのものなので、伸ばすと描画コストが増える。
     trail: { samples: 28, interval: 0.085, width: 4.0, alpha: 0.55 },
+    // 増設すると公転半径を少しずつ広げる。基数が増えても団子にならず、
+    // 「輪が育つ」ことがそのまま強さの表示になる。
+    ringPerPod: 0.07, ringMax: 1.75,
   },
 
   // 恒久強化（コア）。ラン内の弧に触れない範囲だけを受け持つ。
@@ -82,6 +89,9 @@ export const CONFIG = {
     // ポッドは1基では2色以上の敵を倒し切れず、そろって初めて自動化が完成する。
     // 価値が非線形なので、以前ほど段階的に高くしない。
     pod: { C: 210, M: 140, Y: 300 },
+    // ポッドは色ごとに増設できる。2基目以降はこの倍率で高くなる。
+    // 上限を作らないのは、終盤に金の使い道が尽きると手数が伸びなくなるため。
+    podMul: 2.2,
     rate:   { base: 130, mul: 1.65, max: 5 },
     pierce: { base: 220, mul: 2.0,  max: 3 },
     spread: { base: 280, mul: 2.1,  max: 3 },

@@ -2,11 +2,18 @@ import { CONFIG, INK, INK_NAME, COLOR } from '../config.js';
 import { syncPods } from '../core/state.js';
 import { sfx } from '../core/audio.js';
 
+/**
+ * ポッドは色ごとに何基でも増設できる（上限なし）。
+ * 1基目が自動化の開始で、2基目以降は「終盤に金の使い道が尽きない」ための穴。
+ * 使い道が尽きると、そこから先は撃つ手数が伸びず画面が寂しくなる。
+ */
 const podEntry = (id, ink) => ({
   id, ink, name: `${INK_NAME[ink]} ポッド`,
-  cost: () => CONFIG.costs.pod[{ [INK.C]: 'C', [INK.M]: 'M', [INK.Y]: 'Y' }[ink]],
-  owned: (G) => G.up[id],
-  buy: (G) => { G.up[id] = true; syncPods(G); },
+  lv: (G) => G.up[id],
+  max: Infinity,
+  cost: (G) => Math.round(CONFIG.costs.pod[{ [INK.C]: 'C', [INK.M]: 'M', [INK.Y]: 'Y' }[ink]]
+    * Math.pow(CONFIG.costs.podMul, G.up[id])),
+  buy: (G) => { G.up[id]++; syncPods(G); },
 });
 
 /**

@@ -39,6 +39,8 @@ export const STAGES = [
     inks: MONO,
     pool: { [M]: at(0, 1) },
     motions: { drift: 1 },
+    // 最初の面。密度の伸びはいちばん穏やかにする
+    spawn: { rate0: 0.50, rate1: 4.5, curve: 1.8 },
     bareChance: { base: 0.22 },
     armoredChance: { base: 0.02, perSec: 0 },
     shop: ALL,
@@ -51,6 +53,7 @@ export const STAGES = [
     pool: { [M]: at(0, 3), [C]: at(0, 3), [C | M]: at(0.30, [1, 3]) },
     motions: { drift: 3, leaf: 1 },
     roles: { normal: 6, cluster: 1, carry: 1 },
+    spawn: { rate0: 0.55, rate1: 5.5, curve: 1.9 },
     bareChance: { base: 0.18 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
     shop: ALL,
@@ -84,7 +87,7 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 2, dodge: 2 },
     roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1 },
-    spawn: { start: 0.85, min: 0.26, rampPerSec: 0.0042 },
+    spawn: { rate0: 0.60, rate1: 7.5, curve: 2.0 },
     shop: ALL,
   },
   {
@@ -99,7 +102,8 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 1, dodge: 1 },
     roles: { normal: 6, split: 2, dive: 1, carry: 1 },
-    spawn: { start: 1.05, min: 0.38, rampPerSec: 0.0030 },
+    // 黒は1体3発。体数で押すと手数が足りなくなるので伸びは抑える
+    spawn: { rate0: 0.50, rate1: 5.0, curve: 1.9 },
     bareChance: { base: 0.10 },
     shop: ALL,
   },
@@ -117,7 +121,7 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 2, dodge: 1 },
     roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 2 },
-    spawn: { start: 0.90, min: 0.22, rampPerSec: 0.0032 },
+    spawn: { rate0: 0.60, rate1: 7.0, curve: 2.1 },
     fall: { start: 50, rampPerSec: 0.52 },
     armoredChance: { base: 0.08, perSec: 0.0006 },
     shop: ALL,
@@ -137,7 +141,9 @@ export const STAGES = [
     roles: { normal: 5, cluster: 2, dive: 1 },
     bareChance: { base: 0.30 },
     armoredChance: { base: 0.03, perSec: 0.0002 },
-    spawn: { start: 1.05, min: 0.40, rampPerSec: 0.0030 },
+    // ポッドを買えない＝out は連射・貫通・拡散のぶんしか伸びない。
+    // in の伸びもそれに合わせて抑える（ここだけ密度カーブが浅い）
+    spawn: { rate0: 0.50, rate1: 2.1, curve: 1.8 },
     shop: HAND_ONLY,
   },
   {
@@ -153,9 +159,10 @@ export const STAGES = [
     roles: { normal: 5, cluster: 2, split: 1, carry: 2 },
     armoredChance: { base: 0.30, perSec: 0.0015 },
     bareChance: { base: 0.08 },
-    spawn: { start: 0.70, min: 0.24, rampPerSec: 0.0038 },
-    startUp: { podC: true, podM: true, podY: true },
-    shop: HAND_ONLY,
+    spawn: { rate0: 0.80, rate1: 6.0, curve: 1.8 },
+    startUp: { podC: 1, podM: 1, podY: 1 },
+    // 増設は買える。自動化を伸ばす面なので、金の行き先もそこに置く
+    shop: ALL,
   },
 ];
 
@@ -270,6 +277,11 @@ export function validateStages() {
     }
     // ラン開始時点で何も降ってこない面は成立しない
     if (!hasStart) problems.push(`${s.id}: 開始時（from:0）に出る敵がいない`);
+    // 密度カーブは「だんだん増える」形でなければならない
+    const sp = resolveRules(s).spawn;
+    if (!(sp.rate0 > 0)) problems.push(`${s.id}: spawn.rate0 が不正`);
+    if (!(sp.rate1 > sp.rate0)) problems.push(`${s.id}: spawn が終盤に増えない`);
+    if (!(sp.curve > 0)) problems.push(`${s.id}: spawn.curve が不正`);
     for (const key of Object.keys(s.motions)) {
       if (!['drift', 'leaf', 'dodge'].includes(key)) {
         problems.push(`${s.id}: 未知の落ち方 "${key}"`);
