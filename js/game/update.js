@@ -2,7 +2,7 @@ import { CONFIG, COLOR, PALETTE, BARE, INK_COUNT } from '../config.js';
 import { view } from '../core/view.js';
 import { fireInterval, shipInk } from '../core/state.js';
 import { sfx } from '../core/audio.js';
-import { spawnEnemy, shoot, burst } from './entities.js';
+import { spawnEnemy, spawnFragments, shoot, burst } from './entities.js';
 
 export function update(G, dt, input, onGameOver) {
   G.t += dt;
@@ -254,6 +254,8 @@ function resolveBulletHit(G, b, i) {
       if (b.from === 'ship') G.st.ship++; else G.st.pod++;
       burst(G, e.x, e.y, COLOR[before], e.armored ? 26 : 10 + INK_COUNT[before] * 6);
       G.enemies.splice(j, 1);
+      // 分裂は撃破した位置で割れる。高い位置で割るほど破片を処理する時間ができる。
+      if (e.role === 'split') spawnFragments(G, e);
       if (e.armored) sfx.killArmored(before); else sfx.kill(before);
     } else {
       sfx.peel(e.inks);                       // 剥がれて色が変わった

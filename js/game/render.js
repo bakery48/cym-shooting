@@ -98,6 +98,22 @@ function drawInkGuide(ctx, r, inks) {
 }
 
 /**
+ * 分裂する敵の目印。割れる線を縦に走らせる。
+ * インクの案内は横一列なので、縦線なら重ならずに読める。
+ */
+function drawSplitSeam(ctx, r) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(16,20,32,.7)';
+  ctx.lineWidth = 2.2;
+  ctx.setLineDash([r * 0.28, r * 0.2]);
+  ctx.beginPath();
+  ctx.moveTo(0, -r);
+  ctx.lineTo(0, r);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
  * 敵1体ぶんの見た目を、任意のコンテキストに描く。
  * 凡例と盤面で同じ関数を使うことで、説明と実物がずれないようにする。
  */
@@ -218,6 +234,7 @@ function drawEnemies(ctx, G) {
       enemyPath(ctx, 0, 0, e.r * 1.42, e.rot);
       ctx.stroke();
     }
+    if (e.role === 'split') drawSplitSeam(ctx, e.r);
     // 何が混ざっているかの案内は、回転させずに常に水平に並べる
     drawInkGuide(ctx, e.r, e.inks);
     ctx.restore();

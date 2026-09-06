@@ -25,6 +25,14 @@ export const CONFIG = {
     guide: { radius: 0.2, gap: 0.5, ring: 1.6 },
   },
 
+  // 役割。照合の負荷ではなく「どこにいるか・いつ撃つか」を問うための軸。
+  roles: {
+    // 分裂: 撃破すると素地の小さい敵に割れる。高い位置で割るほど処理の時間ができる。
+    split:   { fragments: 2, radiusMul: 0.6, spreadPx: 26, fallMul: 1.15 },
+    // 群れ: 同じ単色がまとまって湧く。照合は増えず、位置取りだけが問われる。
+    cluster: { min: 3, max: 5, gapMul: 2.3 },
+  },
+
   // 落ち方のバリエーション。形を統一したぶん、差は挙動で付ける。
   motion: {
     leaf:  { swayHz: 0.55, swayPx: 46, fallMul: 0.78, spin: 2.4 },
