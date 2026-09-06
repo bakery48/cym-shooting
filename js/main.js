@@ -61,7 +61,7 @@ elVol.addEventListener('input', () => applyAudioSettings());
 elVol.addEventListener('change', () => sfx.kill(INK.M));   // 音量確認用の試聴
 elMute.addEventListener('change', () => { applyAudioSettings(); if (!audio.muted) sfx.kill(INK.M); });
 
-const hud = createHud();
+const hud = createHud(() => progress.cleared);
 const shop = createShop($('shop'), getGame);
 const select = createSelect(() => progress, begin, (item) => {
   const ok = buyMeta(progress, item);
@@ -163,7 +163,7 @@ function gameOver(reason, cleared) {
   const { updated, cores } = recordRun(progress, G.stage.id, cleared, G.st);
   G.cores = cores;
   if (cleared) sfx.clear(); else sfx.fail();
-  renderResults(G, progress.best[G.stage.id], updated, cores);
+  renderResults(G, progress.best[G.stage.id], updated, cores, progress.meta.cores);
 
   // 次に進める面があればそれを案内する
   const next = nextStage(G.stage);

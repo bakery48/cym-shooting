@@ -35,7 +35,8 @@
         <div id="meta">
           <div class="m-head">
             <div class="m-cores"><b id="meta-cores">0</b><span>コア</span></div>
-            <p>恒久強化。ランをまたいで残る。<br>コインで買う強化は毎ランリセットされる。</p>
+            <p>恒久強化。ランをまたいで残る。コインで買う強化は毎ランリセットされる。<br>
+              <b>コアはラン終了時にもらえる</b> ― クリアで +3、初クリアはさらに +5、失敗でも +1。</p>
             <button type="button" id="btn-reset">記録を消す</button>
           </div>
           <div id="meta-list"></div>
@@ -66,6 +67,10 @@
     <div class="screen" id="screen-end" hidden>
       <h1 id="end-title">終了</h1>
       <p class="sub" id="end-stage"></p>
+      <div id="end-core">
+        <b id="end-core-gain">+0</b>
+        <span id="end-core-note"></span>
+      </div>
       <dl class="results" id="end-results"></dl>
       <div class="row">
         <button class="big" id="btn-next" hidden>次へ</button>
@@ -79,6 +84,7 @@
     <div class="stat wide"><b id="hud-stage">―</b><span>区</span></div>
     <div class="stat"><b id="hud-time">3:00</b><span>のこり</span></div>
     <div class="stat money"><b id="hud-money">0</b><span>所持金</span></div>
+    <div class="stat core"><b id="hud-core">+3</b><span>クリアで コア</span></div>
     <div class="gaugewrap">
       <span id="hud-breachlabel">突破 0 / 10</span>
       <div class="gauge"><i id="hud-breachbar"></i></div>
