@@ -93,17 +93,24 @@ function spawnCluster(G, pool, progress) {
 /**
  * 分裂した破片。素地（どの色でも1発）なので、照合の負荷は増えない。
  * 増えるのは「あと2体を落とす時間があるか」という判断だけ。
+ *
+ * 割れた瞬間は重なった位置から左下・右下へ**加速しながら**開く（motion: 'burst'）。
+ * 等速で分かれるより「割れた」に見えるのと、開き方が時間で変わるので
+ * 親を撃った位置のまま構えていると両方とも取り逃す。
  */
 export function spawnFragments(G, from) {
   const { fragments, radiusMul, spreadPx, fallMul } = CONFIG.roles.split;
   const r = from.r * radiusMul;
 
   for (let i = 0; i < fragments; i++) {
+    const side = i < fragments / 2 ? -1 : 1;          // 左下 / 右下
     const off = (i - (fragments - 1) / 2) * spreadPx * view.sc;
     G.enemies.push({
       inks: BARE, inks0: BARE,
       fallMul: (from.fallMul ?? 1) * fallMul,
-      armored: false, motion: 'drift', role: 'normal',
+      armored: false, motion: 'burst', role: 'normal',
+      dive: null, diveT: 0, dodgeDir: 0,
+      burstSide: side, bvx: 0, bvy: 0,
       x: Math.max(r, Math.min(view.W - r, from.x + off)),
       y: from.y, r,
       vx: 0, rot: Math.random() * Math.PI * 2, phase: 0, hit: 0,

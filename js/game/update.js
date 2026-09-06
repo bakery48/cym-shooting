@@ -146,6 +146,7 @@ function updateEnemies(G, dt) {
  *   drift  まっすぐ落ちる
  *   leaf   木の葉のように左右に揺れながら、少し遅く落ちる
  *   dodge  遅い代わりに、自機と同じ縦軸から常にずれ続ける
+ *   burst  分裂の破片。左下・右下へ加速しながら開く（湧きでは選ばれない）
  */
 function moveEnemy(G, e, dt, base) {
   const m = CONFIG.motion;
@@ -157,6 +158,17 @@ function moveEnemy(G, e, dt, base) {
     e.y += baseFall * m.leaf.fallMul * dt;
     e.x += Math.cos(e.phase) * m.leaf.swayPx * view.S * dt;
     e.rot += dt * m.leaf.spin * Math.sin(e.phase);
+  } else if (e.motion === 'burst') {
+    const k = CONFIG.roles.split.burst;
+    // 初速ゼロから加速させる ― 弾かれたのではなく「割れて開いた」に見せる
+    e.bvx = clampAbs(e.bvx + e.burstSide * k.ax * view.S * dt, k.vxMax * view.S);
+    e.bvy = Math.min(e.bvy + k.ay * view.S * dt, k.vyMax * view.S);
+    e.vx = e.bvx;
+    e.x += e.bvx * dt;
+    e.y += (baseFall + e.bvy) * dt;
+    e.rot += dt * k.spin * e.burstSide;
+    // 壁に着いたら横の勢いは死ぬ（押し付け続けると張り付いて見える）
+    if (e.x <= e.r || e.x >= view.W - e.r) e.bvx = 0;
   } else if (e.motion === 'dodge') {
     e.y += baseFall * m.dodge.fallMul * dt;
     e.vx = dodgeDrift(G, e) * m.dodge.speed * view.S;
@@ -205,6 +217,8 @@ function diveMul(e, dt) {
   }
   return d.fastMul;
 }
+
+const clampAbs = (v, max) => Math.max(-max, Math.min(max, v));
 
 /**
  * 回避。**弾を見て避けるのではなく、自機と同じ縦軸に居続けないようにずれる。**
