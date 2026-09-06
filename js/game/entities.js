@@ -20,6 +20,7 @@ function makeEnemy(G, { inks, armored, motion, role, x, r, fallMul }) {
     diveT: 0,
     dodgeDir: 0,                          // 回避が今ずれている向き（0 = 止まっている）
     breedT: 0, breedGen: 0,               // 増殖の残り時間と世代
+    kickDir: 0, kickVx: 0, kickT: 0,      // 横へ突き放す勢い（増殖の分かれぎわ）
     rewardMul: 1,
     hit: 0,
   };
@@ -63,8 +64,9 @@ export function spawnEnemy(G) {
     r, fallMul: fall,
   });
   if (finalRole === 'breed') {
-    born.breedT = CONFIG.roles.breed.interval;
-    born.rewardMul = CONFIG.roles.breed.value;
+    const b = CONFIG.roles.breed;
+    born.breedT = b.interval * (1 - b.jitter / 2 + Math.random() * b.jitter);
+    born.rewardMul = b.value;
   }
   G.enemies.push(born);
 }
@@ -140,15 +142,24 @@ export function spawnOffspring(G, from) {
   const r = from.r * b.radiusMul;
   const gap = b.gapPx * view.sc;
 
+  // 個体ごとにばらす ― 全員が同時に同じ幅で分かれると格子状に並び、
+  // 左へ出た子と右へ出た子が同じ位置で出会って重なってしまう。
+  const jitter = (amount) => 1 - amount / 2 + Math.random() * amount;
+
   from.breedGen = gen;
   from.r = r;
-  from.breedT = b.interval;
+  from.breedT = b.interval * jitter(b.jitter);
   from.rewardMul = b.value / Math.pow(2, gen);
   from.x = Math.max(r, Math.min(view.W - r, from.x - gap / 2));
+  // 左右へ突き放す。重なったまま並ぶと、1発の射線でまとめて落ちてしまう。
+  from.kickDir = -1; from.kickVx = 0;
+  from.kickT = b.kick.accelSec * jitter(b.kick.jitter);
 
   const child = {
     ...from,
     x: Math.max(r, Math.min(view.W - r, from.x + gap)),
+    breedT: b.interval * jitter(b.jitter),
+    kickDir: 1, kickVx: 0, kickT: b.kick.accelSec * jitter(b.kick.jitter),
     rot: Math.random() * Math.PI * 2,
     phase: Math.random() * Math.PI * 2,
     hit: 1,

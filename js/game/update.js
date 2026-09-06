@@ -210,8 +210,38 @@ function moveEnemy(G, e, dt, base) {
     e.rot += dt * (e.armored ? 1.6 : 0.5);
   }
 
+  applyKick(e, dt);
+
   // 画面の外へは出さない（避け続けて端に張り付くのを防ぐ）
   e.x = Math.max(e.r, Math.min(view.W - e.r, e.x));
+}
+
+/**
+ * 横へ突き放す勢い。落ち方の上に足すので、どの motion とも併用できる。
+ * いまは増殖が分かれるときにだけ使う ― その場で倍になるだけだと重なったまま
+ * 並ぶので、1発の射線でまとめて落ちて「増えた」ことの意味が消える。
+ *
+ * 初速ゼロから加速し、加速をやめたら減衰して止まる。等速で飛ばすと
+ * 「分かれた」ではなく「弾かれた」に見える。
+ */
+function applyKick(e, dt) {
+  if (!e.kickVx && !e.kickT) return;
+  const k = CONFIG.roles.breed.kick;
+
+  if (e.kickT > 0) {
+    const cap = k.vxMax * view.S * Math.pow(k.genScale, Math.max(0, e.breedGen - 1));
+    e.kickT -= dt;
+    e.kickVx = clampAbs(e.kickVx + e.kickDir * k.ax * view.S * dt, cap);
+  } else {
+    e.kickVx *= Math.exp(-k.decay * dt);
+    if (Math.abs(e.kickVx) < 1) { e.kickVx = 0; return; }
+  }
+  e.x += e.kickVx * dt;
+  // 壁では跳ね返して加速も止める（押し付け続けると張り付いて見える）
+  if ((e.x <= e.r && e.kickVx < 0) || (e.x >= view.W - e.r && e.kickVx > 0)) {
+    e.kickVx = -e.kickVx * k.bounce;
+    e.kickT = 0;
+  }
 }
 
 /**
