@@ -46,13 +46,12 @@ function updatePods(G, dt) {
     p.y = sh.y + Math.sin(p.a) * base * 0.72;
     recordTrail(p, sh, dt);
 
+    // **真上へ、的の有無にかかわらず一定間隔で撃つ。**
+    // 狙って撃つと「どこに立つか」の判断がポッドに肩代わりされる。
+    // 撃ち止めもしない ― 公転で左右に振れる弾幕が常に出ていることで、
+    // 「その下に敵を入れる」という自機の位置取りが意味を持つ。
     p.cd -= dt;
     if (p.cd > 0) continue;
-
-    if (!podTargetAbove(G, p)) { p.cd = 0.1; continue; }
-
-    // **真上にしか撃たない。** 狙って撃つと自機の位置取りが効かなくなり、
-    // 「どこに立つか」の判断がポッドに肩代わりされてしまう。
     shoot(G, p.x, p.y, p.ink, 'pod', 0);
     p.cd = fireInterval(G) * CONFIG.pod.fireMul;
   }
@@ -81,25 +80,6 @@ function recordTrail(p, sh, dt) {
   p.trailT = 0;
   p.trail.push(p.x - sh.x, p.y - sh.y);
   if (p.trail.length > samples * 2) p.trail.splice(0, p.trail.length - samples * 2);
-}
-
-/**
- * 真上に自分の弾が通る敵がいるか。いれば撃つ、いなければ撃たない。
- *
- * ポッドは公転して左右に動くので、これは「いつ撃つか」ではなく
- * **「自機をどこに立たせるか」**の判定になる ― 狙って撃たせると
- * その判断がまるごと消える。
- * 装甲付きはポッドの弾を弾くので、居ても撃たない（無駄弾になるだけ）。
- */
-function podTargetAbove(G, p) {
-  const half = CONFIG.pod.columnHalf * view.sc;
-  const reach = CONFIG.pod.range * view.S;
-  for (const e of G.enemies) {
-    if (e.armored || e.y > p.y || p.y - e.y > reach) continue;
-    if (e.inks !== BARE && !(e.inks & p.ink)) continue;
-    if (Math.abs(e.x - p.x) <= e.r + half) return e;
-  }
-  return null;
 }
 
 /**
