@@ -58,7 +58,11 @@ export const CONFIG = {
     edgeMargin: 24,
   },
   pod: {
-    orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.9, bulletSpeed: 460, range: 520,
+    // 発射間隔は自機と同じ（fireMul 1.0）。狙わなくなったぶんは手数で埋める ―
+    // 真上に的がある時しか撃たないので、実際に撃っている時間は自機よりずっと短い。
+    orbitRadius: 58, orbitSpeed: 0.9, fireMul: 1.0, bulletSpeed: 460, range: 520,
+    // 真上判定の幅（敵の半径に足す）。狭すぎると公転で通り過ぎてしまって撃たない。
+    columnHalf: 14,
     // 公転の航跡。買ったポッドが「回る帯」として見えるようにするためのもの。
     // 帯の長さは interval × samples × orbitSpeed（ラジアン）で決まる。
     // 既定は約2.4秒 = 公転の約120度で、3基そろうとほぼ輪になる。

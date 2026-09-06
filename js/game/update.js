@@ -49,12 +49,11 @@ function updatePods(G, dt) {
     p.cd -= dt;
     if (p.cd > 0) continue;
 
-    const target = findPodTarget(G, p);
-    if (!target) { p.cd = 0.1; continue; }
+    if (!podTargetAbove(G, p)) { p.cd = 0.1; continue; }
 
-    // 上方向を0とした射角
-    const angle = Math.atan2(target.x - p.x, -(target.y - p.y));
-    shoot(G, p.x, p.y, p.ink, 'pod', angle);
+    // **真上にしか撃たない。** 狙って撃つと自機の位置取りが効かなくなり、
+    // 「どこに立つか」の判断がポッドに肩代わりされてしまう。
+    shoot(G, p.x, p.y, p.ink, 'pod', 0);
     p.cd = fireInterval(G) * CONFIG.pod.fireMul;
   }
 }
@@ -85,16 +84,22 @@ function recordTrail(p, sh, dt) {
 }
 
 /**
- * ポッドの標的。自分の色のインクが乗っている敵を優先し、
- * 居ないときだけ素地の敵（インクなし）を撃つ。
- * 素地を同列に扱うと、ポッドが本来の担当を放って安い敵に構い始める。
+ * 真上に自分の弾が通る敵がいるか。いれば撃つ、いなければ撃たない。
  *
- * 同色を増設したときは `slot` の順に「n番目に近い敵」を狙う ―
- * 全基が同じ1体に撃ち込むと、増設したぶんがそのまま無駄弾になる。
+ * ポッドは公転して左右に動くので、これは「いつ撃つか」ではなく
+ * **「自機をどこに立たせるか」**の判定になる ― 狙って撃たせると
+ * その判断がまるごと消える。
+ * 装甲付きはポッドの弾を弾くので、居ても撃たない（無駄弾になるだけ）。
  */
-function findPodTarget(G, p) {
-  return nthNearest(G, p, (e) => e.inks & p.ink, p.slot)
-      ?? nthNearest(G, p, (e) => e.inks === BARE, p.slot);
+function podTargetAbove(G, p) {
+  const half = CONFIG.pod.columnHalf * view.sc;
+  const reach = CONFIG.pod.range * view.S;
+  for (const e of G.enemies) {
+    if (e.armored || e.y > p.y || p.y - e.y > reach) continue;
+    if (e.inks !== BARE && !(e.inks & p.ink)) continue;
+    if (Math.abs(e.x - p.x) <= e.r + half) return e;
+  }
+  return null;
 }
 
 /**
@@ -120,24 +125,18 @@ function updateWings(G, dt) {
   }
 }
 
-const nearest = (G, from, accept, range) => nthNearest(G, from, accept, 0, range);
-
-/**
- * 近い順に n 番目の敵。候補が足りなければいちばん遠い候補（＝実質いちばん近い1体）に落とす。
- */
-function nthNearest(G, from, accept, n = 0, range = CONFIG.pod.range) {
-  const found = [];
-  const max = range * view.S;
+/** いちばん近い敵。僚機が狙って撃つために使う（ポッドは狙わない）。 */
+function nearest(G, from, accept, range = CONFIG.pod.range) {
+  let best = null;
+  let bestDist = range * view.S;
   for (const e of G.enemies) {
     // 装甲敵はポッドの弾を弾くので狙わない。
     // 既に撃ち手より下にいる敵も、撃っても届かないので対象外にする。
     if (e.armored || e.y > from.y || !accept(e)) continue;
     const d = Math.hypot(e.x - from.x, e.y - from.y);
-    if (d < max) found.push({ e, d });
+    if (d < bestDist) { bestDist = d; best = e; }
   }
-  if (!found.length) return null;
-  found.sort((a, b) => a.d - b.d);
-  return found[Math.min(n, found.length - 1)].e;
+  return best;
 }
 
 function updateEnemies(G, dt) {

@@ -87,7 +87,7 @@ export const STAGES = [
     },
     motions: { drift: 3, leaf: 2, dodge: 2 },
     roles: { normal: 5, cluster: 2, split: 2, dive: 2, carry: 1 },
-    spawn: { rate0: 0.60, rate1: 7.5, curve: 2.0 },
+    spawn: { rate0: 0.60, rate1: 6.8, curve: 2.0 },
     shop: ALL,
   },
   {

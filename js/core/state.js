@@ -47,7 +47,7 @@ export const turnStep = (G) => (Math.PI * 2) / Math.max(1, G.rules.inks.length);
  * 既存ポッドは公転角と航跡を保ったまま残し、新規ぶんだけ空いた位相に配置する。
  *
  * 同じ色を何基でも増設できる。`slot` は同色内の番号で、
- * 「何番目に近い敵を狙うか」に使う ― 全基が同じ敵に撃つと増設が無駄になる。
+ * 増設・売却をまたいで各基の公転位相と航跡を保つための識別に使う。
  */
 export function syncPods(G) {
   const wanted = [];
